@@ -2,12 +2,102 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Local Walks 🥾</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Local Walks</title>
   <meta name="description" content="Organise local walks, invite friends and discover new routes." />
+
+  <!-- ── PWA Meta Tags ─────────────────────────────────────── -->
+  <meta name="application-name" content="Local Walks" />
+  <meta name="theme-color" content="#3B5C4A" />
+
+  <!-- iOS: full-screen app mode -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Local Walks" />
+
+  <!-- iOS home screen icon (generated as canvas PNG below) -->
+  <link id="apple-touch-icon" rel="apple-touch-icon" sizes="180x180" />
+
+  <!-- Web App Manifest (generated inline below) -->
+  <link id="pwa-manifest" rel="manifest" />
+  <!-- ─────────────────────────────────────────────────────── -->
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <!-- PWA: Generate icon + manifest dynamically (no extra files needed) -->
+  <script>
+    (function() {
+      // Draw a 192x192 icon on a canvas and use it as the apple-touch-icon
+      function makeIcon(size) {
+        var canvas = document.createElement('canvas');
+        canvas.width = size; canvas.height = size;
+        var ctx = canvas.getContext('2d');
+        // Background
+        ctx.fillStyle = '#3B5C4A';
+        ctx.beginPath();
+        ctx.roundRect(0, 0, size, size, size * 0.22);
+        ctx.fill();
+        // Boot emoji
+        ctx.font = (size * 0.55) + 'px serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('\uD83E\uDD7E', size / 2, size / 2 + size * 0.03);
+        return canvas.toDataURL('image/png');
+      }
+
+      var icon192 = makeIcon(192);
+      var icon512 = makeIcon(512);
+
+      // Set apple touch icon
+      document.getElementById('apple-touch-icon').href = icon192;
+
+      // Build and inject manifest as a blob URL
+      var manifest = {
+        name: 'Local Walks',
+        short_name: 'Local Walks',
+        description: 'Organise local walks, invite friends and discover new routes.',
+        start_url: './',
+        display: 'standalone',
+        background_color: '#F5F0E8',
+        theme_color: '#3B5C4A',
+        orientation: 'portrait-primary',
+        icons: [
+          { src: icon192, sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+          { src: icon512, sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+        ]
+      };
+      var blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+      document.getElementById('pwa-manifest').href = URL.createObjectURL(blob);
+
+      // Register service worker for offline support
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          var swCode = [
+            'var CACHE = "local-walks-v1";',
+            'var ASSETS = ["./"];',
+            'self.addEventListener("install", function(e) {',
+            '  e.waitUntil(caches.open(CACHE).then(function(c) { return c.addAll(ASSETS); }));',
+            '  self.skipWaiting();',
+            '});',
+            'self.addEventListener("activate", function(e) {',
+            '  e.waitUntil(caches.keys().then(function(keys) {',
+            '    return Promise.all(keys.filter(function(k){return k!==CACHE;}).map(function(k){return caches.delete(k);}));',
+            '  }));',
+            '  self.clients.claim();',
+            '});',
+            'self.addEventListener("fetch", function(e) {',
+            '  if (e.request.method !== "GET") return;',
+            '  e.respondWith(fetch(e.request).catch(function() { return caches.match(e.request); }));',
+            '});'
+          ].join('\n');
+          var swBlob = new Blob([swCode], { type: 'application/javascript' });
+          navigator.serviceWorker.register(URL.createObjectURL(swBlob));
+        });
+      }
+    })();
+  </script>
 
   <!-- React + Babel (no build step needed) -->
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
@@ -62,6 +152,8 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body, #root { min-height: 100vh; }
+    body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+    .header { padding-top: calc(18px + env(safe-area-inset-top)); }
     body { font-family: 'DM Sans', sans-serif; background: #F5F0E8; color: #2C2C2C; }
 
     .header { background: #3B5C4A; padding: 18px 28px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 20px rgba(59,92,74,0.3); }
@@ -208,10 +300,38 @@
       .main { padding: 24px 14px; }
       .hero-title { font-size: 30px; }
     }
+
+    /* iOS install prompt */
+    .ios-install-banner { display: none; position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #3B5C4A; color: #F5F0E8; padding: 14px 20px; border-radius: 16px; font-size: 13px; font-family: "DM Sans", sans-serif; box-shadow: 0 8px 30px rgba(0,0,0,0.25); z-index: 999; text-align: center; max-width: 320px; width: calc(100% - 40px); line-height: 1.5; }
+    .ios-install-banner.show { display: block; }
+    .ios-install-banner strong { display: block; margin-bottom: 4px; font-size: 14px; font-weight: 600; }
+    .ios-dismiss { margin-top: 10px; display: inline-block; font-size: 11px; opacity: 0.7; cursor: pointer; background: none; border: none; color: inherit; text-decoration: underline; font-family: inherit; }
   </style>
 </head>
 <body>
   <div id="root"></div>
+
+  <!-- iOS PWA install prompt -->
+  <div class="ios-install-banner" id="ios-banner">
+    <strong>📲 Add to Home Screen</strong>
+    Tap <strong>Share ↑</strong> then <em>"Add to Home Screen"</em> to install the app.
+    <br/><button class="ios-dismiss" onclick="document.getElementById('ios-banner').remove(); localStorage.setItem('pwa-dismissed','1')">Dismiss</button>
+  </div>
+
+  <script>
+    // Show iOS install banner only on iOS Safari when not already installed
+    (function() {
+      var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+      var isStandalone = window.navigator.standalone === true;
+      var dismissed = localStorage.getItem("pwa-dismissed");
+      if (isIOS && !isStandalone && !dismissed) {
+        setTimeout(function() {
+          var banner = document.getElementById("ios-banner");
+          if (banner) banner.classList.add("show");
+        }, 3000);
+      }
+    })();
+  </script>
 
   <script type="text/babel" data-presets="react">
     const { useState, useEffect, useRef } = React;
