@@ -6,100 +6,254 @@
   <title>Local Walks</title>
   <meta name="description" content="Organise local walks, invite friends and discover new routes." />
 
-  <!-- ── PWA Meta Tags ─────────────────────────────────────── -->
-  <meta name="application-name" content="Local Walks" />
-  <meta name="theme-color" content="#3B5C4A" />
-
-  <!-- iOS: full-screen app mode -->
+  <!-- PWA Meta Tags -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Local Walks" />
-
-  <!-- iOS home screen icon (generated as canvas PNG below) -->
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#3B5C4A" />
   <link id="apple-touch-icon" rel="apple-touch-icon" sizes="180x180" />
-
-  <!-- Web App Manifest (generated inline below) -->
   <link id="pwa-manifest" rel="manifest" />
-  <!-- ─────────────────────────────────────────────────────── -->
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
 
-  <!-- PWA: Generate icon + manifest dynamically (no extra files needed) -->
+  <!-- Generate cartoon hiker icon + manifest + service worker -->
   <script>
-    (function() {
-      // Draw a 192x192 icon on a canvas and use it as the apple-touch-icon
-      function makeIcon(size) {
-        var canvas = document.createElement('canvas');
-        canvas.width = size; canvas.height = size;
-        var ctx = canvas.getContext('2d');
-        // Background
-        ctx.fillStyle = '#3B5C4A';
-        ctx.beginPath();
-        ctx.roundRect(0, 0, size, size, size * 0.22);
-        ctx.fill();
-        // Boot emoji
-        ctx.font = (size * 0.55) + 'px serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('\uD83E\uDD7E', size / 2, size / 2 + size * 0.03);
-        return canvas.toDataURL('image/png');
-      }
+  (function() {
+    function drawHikerIcon(size) {
+      var c = document.createElement('canvas');
+      c.width = size; c.height = size;
+      var ctx = c.getContext('2d');
+      var s = size / 100; // scale factor
 
-      var icon192 = makeIcon(192);
-      var icon512 = makeIcon(512);
+      // Background rounded rect
+      ctx.fillStyle = '#3B5C4A';
+      ctx.beginPath();
+      ctx.roundRect(0, 0, size, size, size * 0.2);
+      ctx.fill();
 
-      // Set apple touch icon
-      document.getElementById('apple-touch-icon').href = icon192;
+      // ── Cartoon hiker drawn with canvas ──────────────────────
+      ctx.save();
+      ctx.scale(s, s);
 
-      // Build and inject manifest as a blob URL
-      var manifest = {
-        name: 'Local Walks',
-        short_name: 'Local Walks',
-        description: 'Organise local walks, invite friends and discover new routes.',
-        start_url: './',
-        display: 'standalone',
-        background_color: '#F5F0E8',
-        theme_color: '#3B5C4A',
-        orientation: 'portrait-primary',
-        icons: [
-          { src: icon192, sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
-          { src: icon512, sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
-        ]
-      };
-      var blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-      document.getElementById('pwa-manifest').href = URL.createObjectURL(blob);
+      // Walking stick
+      ctx.strokeStyle = '#8B6340';
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(68, 38);
+      ctx.lineTo(78, 85);
+      ctx.stroke();
 
-      // Register service worker for offline support
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-          var swCode = [
-            'var CACHE = "local-walks-v1";',
-            'var ASSETS = ["./"];',
-            'self.addEventListener("install", function(e) {',
-            '  e.waitUntil(caches.open(CACHE).then(function(c) { return c.addAll(ASSETS); }));',
-            '  self.skipWaiting();',
-            '});',
-            'self.addEventListener("activate", function(e) {',
-            '  e.waitUntil(caches.keys().then(function(keys) {',
-            '    return Promise.all(keys.filter(function(k){return k!==CACHE;}).map(function(k){return caches.delete(k);}));',
-            '  }));',
-            '  self.clients.claim();',
-            '});',
-            'self.addEventListener("fetch", function(e) {',
-            '  if (e.request.method !== "GET") return;',
-            '  e.respondWith(fetch(e.request).catch(function() { return caches.match(e.request); }));',
-            '});'
-          ].join('\n');
-          var swBlob = new Blob([swCode], { type: 'application/javascript' });
-          navigator.serviceWorker.register(URL.createObjectURL(swBlob));
-        });
-      }
-    })();
+      // Body / torso (green t-shirt)
+      ctx.fillStyle = '#7CA870';
+      ctx.beginPath();
+      ctx.ellipse(48, 52, 13, 17, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Shorts (brown/khaki)
+      ctx.fillStyle = '#C4A265';
+      ctx.beginPath();
+      ctx.roundRect(37, 60, 22, 14, 4);
+      ctx.fill();
+      // Shorts line down middle
+      ctx.strokeStyle = '#a88a50';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(48, 60); ctx.lineTo(48, 74);
+      ctx.stroke();
+
+      // Left leg
+      ctx.fillStyle = '#E8C99A';
+      ctx.beginPath();
+      ctx.roundRect(38, 73, 9, 13, 3);
+      ctx.fill();
+
+      // Right leg
+      ctx.beginPath();
+      ctx.roundRect(50, 73, 9, 13, 3);
+      ctx.fill();
+
+      // Left boot
+      ctx.fillStyle = '#5C3D1E';
+      ctx.beginPath();
+      ctx.roundRect(35, 83, 13, 7, 3);
+      ctx.fill();
+      ctx.fillStyle = '#3d2810';
+      ctx.fillRect(35, 88, 13, 2);
+      // Boot sole
+      ctx.fillStyle = '#222';
+      ctx.beginPath();
+      ctx.roundRect(34, 89, 14, 3, 2);
+      ctx.fill();
+
+      // Right boot
+      ctx.fillStyle = '#5C3D1E';
+      ctx.beginPath();
+      ctx.roundRect(48, 83, 13, 7, 3);
+      ctx.fill();
+      ctx.fillStyle = '#3d2810';
+      ctx.fillRect(48, 88, 13, 2);
+      ctx.fillStyle = '#222';
+      ctx.beginPath();
+      ctx.roundRect(47, 89, 14, 3, 2);
+      ctx.fill();
+
+      // Boot laces
+      ctx.strokeStyle = '#E8C99A';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(38, 85); ctx.lineTo(46, 85);
+      ctx.moveTo(38, 87); ctx.lineTo(46, 87);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(51, 85); ctx.lineTo(59, 85);
+      ctx.moveTo(51, 87); ctx.lineTo(59, 87);
+      ctx.stroke();
+
+      // Left arm (swinging forward)
+      ctx.fillStyle = '#E8C99A';
+      ctx.beginPath();
+      ctx.save();
+      ctx.translate(36, 52);
+      ctx.rotate(0.4);
+      ctx.roundRect(-4, 0, 8, 16, 4);
+      ctx.fill();
+      ctx.restore();
+
+      // Right arm (holding stick)
+      ctx.save();
+      ctx.translate(62, 50);
+      ctx.rotate(-0.2);
+      ctx.roundRect(-4, 0, 8, 16, 4);
+      ctx.fill();
+      ctx.restore();
+
+      // Neck
+      ctx.fillStyle = '#E8C99A';
+      ctx.beginPath();
+      ctx.roundRect(44, 33, 8, 8, 3);
+      ctx.fill();
+
+      // Head
+      ctx.fillStyle = '#F5D5A8';
+      ctx.beginPath();
+      ctx.ellipse(48, 26, 12, 13, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Hair
+      ctx.fillStyle = '#5C3D1E';
+      ctx.beginPath();
+      ctx.ellipse(48, 16, 12, 8, 0, 0, Math.PI);
+      ctx.fill();
+
+      // Hat brim
+      ctx.fillStyle = '#8B6340';
+      ctx.beginPath();
+      ctx.roundRect(36, 17, 24, 4, 2);
+      ctx.fill();
+      // Hat top
+      ctx.beginPath();
+      ctx.roundRect(39, 8, 18, 11, 4);
+      ctx.fill();
+      // Hat band
+      ctx.fillStyle = '#3B5C4A';
+      ctx.fillRect(39, 16, 18, 3);
+
+      // Eyes
+      ctx.fillStyle = '#2C1810';
+      ctx.beginPath();
+      ctx.ellipse(44, 25, 2, 2.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(52, 25, 2, 2.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Eye shine
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.ellipse(45, 24, 0.8, 0.8, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(53, 24, 0.8, 0.8, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Smile
+      ctx.strokeStyle = '#2C1810';
+      ctx.lineWidth = 1.5;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(48, 28, 5, 0.2, Math.PI - 0.2);
+      ctx.stroke();
+
+      // Rosy cheeks
+      ctx.fillStyle = 'rgba(220,120,100,0.35)';
+      ctx.beginPath();
+      ctx.ellipse(41, 29, 4, 2.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(55, 29, 4, 2.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Backpack
+      ctx.fillStyle = '#D4863A';
+      ctx.beginPath();
+      ctx.roundRect(55, 42, 11, 20, 4);
+      ctx.fill();
+      ctx.fillStyle = '#c07030';
+      ctx.beginPath();
+      ctx.roundRect(56, 43, 9, 4, 2);
+      ctx.fill();
+      // Backpack strap
+      ctx.strokeStyle = '#c07030';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(56, 43); ctx.lineTo(54, 52);
+      ctx.stroke();
+
+      ctx.restore();
+      return c.toDataURL('image/png');
+    }
+
+    var icon = drawHikerIcon(180);
+    var icon512 = drawHikerIcon(512);
+    document.getElementById('apple-touch-icon').href = icon;
+
+    var manifest = {
+      name: 'Local Walks', short_name: 'Local Walks',
+      description: 'Organise local walks, invite friends and discover new routes.',
+      start_url: './', display: 'standalone',
+      background_color: '#F5F0E8', theme_color: '#3B5C4A',
+      orientation: 'portrait-primary',
+      icons: [
+        { src: icon, sizes: '180x180', type: 'image/png', purpose: 'any maskable' },
+        { src: icon512, sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+      ]
+    };
+    var mblob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+    document.getElementById('pwa-manifest').href = URL.createObjectURL(mblob);
+
+    // Store icon globally so React can use it
+    window._hikerIcon = icon;
+
+    // Service worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        var sw = [
+          'var CACHE="local-walks-v2";',
+          'self.addEventListener("install",function(e){e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(["./"]);}));self.skipWaiting();});',
+          'self.addEventListener("activate",function(e){e.waitUntil(caches.keys().then(function(ks){return Promise.all(ks.filter(function(k){return k!==CACHE;}).map(function(k){return caches.delete(k);}));}));self.clients.claim();});',
+          'self.addEventListener("fetch",function(e){if(e.request.method!=="GET")return;e.respondWith(fetch(e.request).catch(function(){return caches.match(e.request);}));});'
+        ].join('\n');
+        var swb = new Blob([sw], { type: 'application/javascript' });
+        navigator.serviceWorker.register(URL.createObjectURL(swb)).catch(function(){});
+      });
+    }
+  })();
   </script>
 
-  <!-- React + Babel (no build step needed) -->
+  <!-- React + Babel -->
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.10/babel.min.js"></script>
@@ -107,58 +261,27 @@
   <!-- Firebase -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-    import {
-      getFirestore, collection, doc, getDoc, setDoc, updateDoc,
-      onSnapshot, query, orderBy, serverTimestamp
-    } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyAN_nzc5VvyQPUyzjkNqfAVaVrKcYI4V1Q",
-      authDomain: "newwalk-ebd2b.firebaseapp.com",
-      projectId: "newwalk-ebd2b",
-      storageBucket: "newwalk-ebd2b.firebasestorage.app",
-      messagingSenderId: "787048551840",
-      appId: "1:787048551840:web:fc6d03eb2ba46d183a40c5"
-    };
-
-    const app = initializeApp(firebaseConfig);
+    import { getFirestore, collection, doc, getDoc, setDoc, updateDoc, onSnapshot, query, orderBy, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+    const app = initializeApp({ apiKey:"AIzaSyAN_nzc5VvyQPUyzjkNqfAVaVrKcYI4V1Q", authDomain:"newwalk-ebd2b.firebaseapp.com", projectId:"newwalk-ebd2b", storageBucket:"newwalk-ebd2b.firebasestorage.app", messagingSenderId:"787048551840", appId:"1:787048551840:web:fc6d03eb2ba46d183a40c5" });
     const db = getFirestore(app);
-
     window._db = {
-      getUser: async (email) => {
-        const snap = await getDoc(doc(db, 'users', email));
-        return snap.exists() ? snap.data() : null;
-      },
-      createUser: async (user) => {
-        await setDoc(doc(db, 'users', user.email), { ...user, createdAt: serverTimestamp() });
-      },
-      saveWalk: async (walk) => {
-        await setDoc(doc(db, 'walks', walk.id), { ...walk, updatedAt: serverTimestamp() });
-      },
-      updateWalk: async (id, fields) => {
-        await updateDoc(doc(db, 'walks', id), { ...fields, updatedAt: serverTimestamp() });
-      },
-      listenWalks: (callback) => {
-        const q = query(collection(db, 'walks'), orderBy('createdAt', 'asc'));
-        return onSnapshot(q, (snap) => {
-          callback(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-        });
-      }
+      getUser: async (email) => { const s = await getDoc(doc(db,'users',email)); return s.exists()?s.data():null; },
+      createUser: async (u) => { await setDoc(doc(db,'users',u.email),{...u,createdAt:serverTimestamp()}); },
+      saveWalk: async (w) => { await setDoc(doc(db,'walks',w.id),{...w,updatedAt:serverTimestamp()}); },
+      updateWalk: async (id,f) => { await updateDoc(doc(db,'walks',id),{...f,updatedAt:serverTimestamp()}); },
+      listenWalks: (cb) => { const q=query(collection(db,'walks'),orderBy('createdAt','asc')); return onSnapshot(q,s=>cb(s.docs.map(d=>({id:d.id,...d.data()})))); }
     };
-
     window.dispatchEvent(new Event('firebase-ready'));
   </script>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body, #root { min-height: 100vh; }
-    body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
-    .header { padding-top: calc(18px + env(safe-area-inset-top)); }
-    body { font-family: 'DM Sans', sans-serif; background: #F5F0E8; color: #2C2C2C; }
+    body { font-family: 'DM Sans', sans-serif; background: #F5F0E8; color: #2C2C2C; padding-top: env(safe-area-inset-top); }
 
-    .header { background: #3B5C4A; padding: 18px 28px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 20px rgba(59,92,74,0.3); }
+    .header { background: #3B5C4A; padding: 16px 20px; padding-top: calc(16px + env(safe-area-inset-top)); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 20px rgba(59,92,74,0.3); }
     .header-brand { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-    .header-icon { font-size: 26px; }
+    .header-logo { width: 40px; height: 40px; border-radius: 10px; }
     .header-title { font-family: 'Playfair Display', serif; font-size: 20px; color: #F5F0E8; }
     .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .user-badge { background: rgba(255,255,255,0.15); color: #F5F0E8; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500; }
@@ -169,7 +292,8 @@
 
     .main { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
     .hero { text-align: center; margin-bottom: 40px; }
-    .hero-title { font-family: 'Playfair Display', serif; font-size: 40px; color: #3B5C4A; line-height: 1.2; margin-bottom: 10px; }
+    .hero-logo { width: 100px; height: 100px; border-radius: 22px; margin: 0 auto 20px; display: block; box-shadow: 0 8px 30px rgba(59,92,74,0.25); }
+    .hero-title { font-family: 'Playfair Display', serif; font-size: 38px; color: #3B5C4A; line-height: 1.2; margin-bottom: 10px; }
     .hero-sub { color: #8C8478; font-size: 15px; font-weight: 300; }
 
     .auth-panel { max-width: 420px; margin: 0 auto; background: #fff; border-radius: 20px; padding: 36px; box-shadow: 0 8px 40px rgba(59,92,74,0.12); }
@@ -181,11 +305,11 @@
 
     .field { margin-bottom: 16px; }
     .field label { display: block; font-size: 11px; font-weight: 600; color: #3B5C4A; margin-bottom: 6px; letter-spacing: 0.6px; text-transform: uppercase; }
-    .field input, .field textarea { width: 100%; padding: 11px 14px; border: 1.5px solid #B8CEBF; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 14px; color: #2C2C2C; background: #F5F0E8; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+    .field input, .field textarea { width: 100%; padding: 11px 14px; border: 1.5px solid #B8CEBF; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 16px; color: #2C2C2C; background: #F5F0E8; outline: none; transition: border-color 0.2s, box-shadow 0.2s; -webkit-appearance: none; }
     .field input:focus, .field textarea:focus { border-color: #7C9B8A; box-shadow: 0 0 0 3px rgba(124,155,138,0.15); }
-    .field textarea { resize: vertical; min-height: 75px; }
+    .field textarea { resize: vertical; min-height: 75px; font-size: 14px; }
 
-    .btn-primary { width: 100%; padding: 13px; background: #3B5C4A; color: #fff; border: none; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+    .btn-primary { width: 100%; padding: 13px; background: #3B5C4A; color: #fff; border: none; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s; -webkit-appearance: none; }
     .btn-primary:hover { background: #4A6741; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(59,92,74,0.3); }
     .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
     .btn-secondary { padding: 9px 18px; background: #E8DFD0; color: #3B5C4A; border: 1.5px solid #B8CEBF; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
@@ -193,6 +317,12 @@
     .btn-danger { padding: 9px 18px; background: transparent; color: #C0392B; border: 1.5px solid #C0392B; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
     .btn-danger:hover { background: #C0392B; color: #fff; }
     .error-msg { color: #C0392B; font-size: 12px; margin-top: 8px; text-align: center; background: #fdf0f0; border-radius: 8px; padding: 8px 12px; }
+
+    /* Biometric / saved login button */
+    .btn-biometric { width: 100%; padding: 13px; background: #fff; color: #3B5C4A; border: 2px solid #3B5C4A; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 12px; }
+    .btn-biometric:hover { background: #F5F0E8; }
+    .biometric-divider { display: flex; align-items: center; gap: 12px; margin: 16px 0; color: #8C8478; font-size: 12px; }
+    .biometric-divider::before, .biometric-divider::after { content: ''; flex: 1; height: 1px; background: #B8CEBF; }
 
     .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
     .section-title { font-family: 'Playfair Display', serif; font-size: 26px; color: #3B5C4A; }
@@ -296,54 +426,92 @@
       .walk-detail-body { padding: 24px 20px; }
       .walk-detail-title { font-size: 26px; }
       .two-col { grid-template-columns: 1fr; }
-      .header { padding: 14px 16px; }
+      .header { padding: 14px 16px; padding-top: calc(14px + env(safe-area-inset-top)); }
       .main { padding: 24px 14px; }
       .hero-title { font-size: 30px; }
     }
-
-    /* iOS install prompt */
-    .ios-install-banner { display: none; position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #3B5C4A; color: #F5F0E8; padding: 14px 20px; border-radius: 16px; font-size: 13px; font-family: "DM Sans", sans-serif; box-shadow: 0 8px 30px rgba(0,0,0,0.25); z-index: 999; text-align: center; max-width: 320px; width: calc(100% - 40px); line-height: 1.5; }
-    .ios-install-banner.show { display: block; }
-    .ios-install-banner strong { display: block; margin-bottom: 4px; font-size: 14px; font-weight: 600; }
-    .ios-dismiss { margin-top: 10px; display: inline-block; font-size: 11px; opacity: 0.7; cursor: pointer; background: none; border: none; color: inherit; text-decoration: underline; font-family: inherit; }
   </style>
 </head>
 <body>
   <div id="root"></div>
 
-  <!-- iOS PWA install prompt -->
-  <div class="ios-install-banner" id="ios-banner">
-    <strong>📲 Add to Home Screen</strong>
-    Tap <strong>Share ↑</strong> then <em>"Add to Home Screen"</em> to install the app.
-    <br/><button class="ios-dismiss" onclick="document.getElementById('ios-banner').remove(); localStorage.setItem('pwa-dismissed','1')">Dismiss</button>
-  </div>
-
-  <script>
-    // Show iOS install banner only on iOS Safari when not already installed
-    (function() {
-      var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-      var isStandalone = window.navigator.standalone === true;
-      var dismissed = localStorage.getItem("pwa-dismissed");
-      if (isIOS && !isStandalone && !dismissed) {
-        setTimeout(function() {
-          var banner = document.getElementById("ios-banner");
-          if (banner) banner.classList.add("show");
-        }, 3000);
-      }
-    })();
-  </script>
-
   <script type="text/babel" data-presets="react">
     const { useState, useEffect, useRef } = React;
 
+    // ── Helpers ────────────────────────────────────────────────────────────────
     const genId = () => Math.random().toString(36).slice(2, 10);
-    const formatDate = (d) => new Date(d).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-    const formatTime = (t) => { const [h, m] = t.split(':'); const hour = parseInt(h); return `${hour % 12 || 12}:${m} ${hour < 12 ? 'AM' : 'PM'}`; };
-    const getWalkIdFromHash = () => { const match = window.location.hash.match(/^#walk\/([a-z0-9]+)$/); return match ? match[1] : null; };
-    const walkShareUrl = (id) => `${window.location.origin}${window.location.pathname}#walk/${id}`;
-
-    // Wait for Firebase to be ready, then get the db helpers
+    const formatDate = d => new Date(d).toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+    const formatTime = t => { const [h,m] = t.split(':'); const hr = parseInt(h); return `${hr%12||12}:${m} ${hr<12?'AM':'PM'}`; };
+    const getWalkIdFromHash = () => { const match = window.location.hash.match(/^#walk\/([a-z0-9]+)$/); return match?match[1]:null; };
+    const walkShareUrl = id => `${window.location.origin}${window.location.pathname}#walk/${id}`;
     const getDB = () => window._db;
+
+    // ── Saved session helpers (localStorage) ──────────────────────────────────
+    const SESSION_KEY = 'localwalks_user';
+    const saveSession = (user) => { try { localStorage.setItem(SESSION_KEY, JSON.stringify(user)); } catch(e){} };
+    const loadSession = () => { try { const s = localStorage.getItem(SESSION_KEY); return s ? JSON.parse(s) : null; } catch(e){ return null; } };
+    const clearSession = () => { try { localStorage.removeItem(SESSION_KEY); } catch(e){} };
+
+    // ── Cartoon hiker SVG logo (inline, scalable) ─────────────────────────────
+    function HikerLogo({ size = 40, className = '' }) {
+      return (
+        <svg className={className} width={size} height={size} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style={{borderRadius: size * 0.2}}>
+          <rect width="100" height="100" rx="20" fill="#3B5C4A"/>
+          {/* Walking stick */}
+          <line x1="68" y1="38" x2="78" y2="85" stroke="#8B6340" strokeWidth="3" strokeLinecap="round"/>
+          {/* Backpack */}
+          <rect x="55" y="42" width="11" height="20" rx="4" fill="#D4863A"/>
+          <rect x="56" y="43" width="9" height="4" rx="2" fill="#c07030"/>
+          <line x1="56" y1="43" x2="54" y2="52" stroke="#c07030" strokeWidth="2"/>
+          {/* Body - green t-shirt */}
+          <ellipse cx="48" cy="52" rx="13" ry="17" fill="#7CA870"/>
+          {/* Shorts - khaki */}
+          <rect x="37" y="60" width="22" height="14" rx="4" fill="#C4A265"/>
+          <line x1="48" y1="60" x2="48" y2="74" stroke="#a88a50" strokeWidth="1.5"/>
+          {/* Left leg */}
+          <rect x="38" y="73" width="9" height="13" rx="3" fill="#E8C99A"/>
+          {/* Right leg */}
+          <rect x="50" y="73" width="9" height="13" rx="3" fill="#E8C99A"/>
+          {/* Left boot */}
+          <rect x="35" y="83" width="13" height="7" rx="3" fill="#5C3D1E"/>
+          <rect x="34" y="89" width="14" height="3" rx="2" fill="#222"/>
+          <line x1="38" y1="85" x2="46" y2="85" stroke="#E8C99A" strokeWidth="1"/>
+          <line x1="38" y1="87" x2="46" y2="87" stroke="#E8C99A" strokeWidth="1"/>
+          {/* Right boot */}
+          <rect x="48" y="83" width="13" height="7" rx="3" fill="#5C3D1E"/>
+          <rect x="47" y="89" width="14" height="3" rx="2" fill="#222"/>
+          <line x1="51" y1="85" x2="59" y2="85" stroke="#E8C99A" strokeWidth="1"/>
+          <line x1="51" y1="87" x2="59" y2="87" stroke="#E8C99A" strokeWidth="1"/>
+          {/* Left arm */}
+          <g transform="translate(36,52) rotate(23)"><rect x="-4" y="0" width="8" height="16" rx="4" fill="#E8C99A"/></g>
+          {/* Right arm */}
+          <g transform="translate(62,50) rotate(-12)"><rect x="-4" y="0" width="8" height="16" rx="4" fill="#E8C99A"/></g>
+          {/* Neck */}
+          <rect x="44" y="33" width="8" height="8" rx="3" fill="#E8C99A"/>
+          {/* Head */}
+          <ellipse cx="48" cy="26" rx="12" ry="13" fill="#F5D5A8"/>
+          {/* Hair */}
+          <ellipse cx="48" cy="16" rx="12" ry="8" fill="#5C3D1E"/>
+          {/* Hat brim */}
+          <rect x="36" y="17" width="24" height="4" rx="2" fill="#8B6340"/>
+          {/* Hat top */}
+          <rect x="39" y="8" width="18" height="11" rx="4" fill="#8B6340"/>
+          {/* Hat band */}
+          <rect x="39" y="16" width="18" height="3" fill="#3B5C4A"/>
+          {/* Eyes */}
+          <ellipse cx="44" cy="25" rx="2" ry="2.5" fill="#2C1810"/>
+          <ellipse cx="52" cy="25" rx="2" ry="2.5" fill="#2C1810"/>
+          {/* Eye shine */}
+          <ellipse cx="45" cy="24" rx="0.8" ry="0.8" fill="#fff"/>
+          <ellipse cx="53" cy="24" rx="0.8" ry="0.8" fill="#fff"/>
+          {/* Smile */}
+          <path d="M43 29 Q48 34 53 29" stroke="#2C1810" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+          {/* Cheeks */}
+          <ellipse cx="41" cy="29" rx="4" ry="2.5" fill="rgba(220,120,100,0.35)"/>
+          <ellipse cx="55" cy="29" rx="4" ry="2.5" fill="rgba(220,120,100,0.35)"/>
+        </svg>
+      );
+    }
 
     // ── Share Box ──────────────────────────────────────────────────────────────
     function ShareBox({ walk }) {
@@ -356,7 +524,7 @@
           <div className="share-box-title">🔗 Share this walk</div>
           <div className="share-url-row">
             <input className="share-url-input" readOnly value={url} onClick={e => e.target.select()} />
-            <button className={`btn-copy ${copied ? 'copied' : ''}`} onClick={copy}>{copied ? '✓ Copied!' : 'Copy link'}</button>
+            <button className={`btn-copy ${copied?'copied':''}`} onClick={copy}>{copied?'✓ Copied!':'Copy link'}</button>
           </div>
           <div className="share-actions">
             <a className="btn-whatsapp" href={`https://wa.me/?text=${encodeURIComponent(text)}`} target="_blank" rel="noopener noreferrer">
@@ -369,7 +537,7 @@
       );
     }
 
-    // ── Auth Panel ─────────────────────────────────────────────────────────────
+    // ── Auth Panel (with saved login + Face ID support) ────────────────────────
     function AuthPanel({ onLogin, context }) {
       const [tab, setTab] = useState('login');
       const [name, setName] = useState('');
@@ -377,6 +545,48 @@
       const [password, setPassword] = useState('');
       const [error, setError] = useState('');
       const [loading, setLoading] = useState(false);
+      const [savedEmail, setSavedEmail] = useState('');
+
+      // Check if there's a previously used email stored (for Face ID hint)
+      useEffect(() => {
+        const last = localStorage.getItem('localwalks_last_email') || '';
+        setSavedEmail(last);
+        if (last) setEmail(last);
+      }, []);
+
+      const doLogin = async (emailVal, passwordVal) => {
+        const db = getDB();
+        const existing = await db.getUser(emailVal);
+        if (!existing) throw new Error('No account found. Please register first.');
+        if (existing.password !== passwordVal) throw new Error('Incorrect password.');
+        return existing;
+      };
+
+      // Try to use the browser's credential manager (triggers Face ID / Touch ID on iPhone)
+      const tryCredentialLogin = async () => {
+        if (!window.PasswordCredential && !window.FederatedCredential) return false;
+        try {
+          const cred = await navigator.credentials.get({ password: true, mediation: 'optional' });
+          if (cred && cred.id && cred.password) {
+            setLoading(true);
+            setError('');
+            const user = await doLogin(cred.id.toLowerCase(), cred.password);
+            saveSession(user);
+            localStorage.setItem('localwalks_last_email', cred.id.toLowerCase());
+            onLogin(user);
+            return true;
+          }
+        } catch(e) { /* user cancelled or not supported */ }
+        setLoading(false);
+        return false;
+      };
+
+      // Run credential check once on mount (auto-login with Face ID if available)
+      useEffect(() => {
+        if (tab === 'login' && context === 'home') {
+          tryCredentialLogin();
+        }
+      }, []);
 
       const handle = async () => {
         setError('');
@@ -385,93 +595,131 @@
         setLoading(true);
         try {
           const db = getDB();
-          const existing = await db.getUser(ev);
           if (tab === 'register') {
+            const existing = await db.getUser(ev);
             if (existing) { setError('Email already registered. Please sign in.'); setLoading(false); return; }
             const user = { id: genId(), name: nv, email: ev, password: pv };
             await db.createUser(user);
+            // Save credentials to browser (enables Face ID next time)
+            if (window.PasswordCredential) {
+              try {
+                const cred = new PasswordCredential({ id: ev, password: pv, name: nv });
+                await navigator.credentials.store(cred);
+              } catch(e) {}
+            }
+            saveSession(user);
+            localStorage.setItem('localwalks_last_email', ev);
             onLogin(user);
           } else {
-            if (!existing) { setError('No account found. Please register first.'); setLoading(false); return; }
-            if (existing.password !== pv) { setError('Incorrect password.'); setLoading(false); return; }
-            onLogin(existing);
+            const user = await doLogin(ev, pv);
+            // Save / update credentials in browser (enables Face ID)
+            if (window.PasswordCredential) {
+              try {
+                const cred = new PasswordCredential({ id: ev, password: pv, name: user.name });
+                await navigator.credentials.store(cred);
+              } catch(e) {}
+            }
+            saveSession(user);
+            localStorage.setItem('localwalks_last_email', ev);
+            onLogin(user);
           }
-        } catch(e) { setError('Connection error. Try again.'); console.error(e); }
+        } catch(e) { setError(e.message || 'Connection error. Try again.'); console.error(e); }
         setLoading(false);
       };
 
       return (
         <div className="auth-panel">
           <div className="auth-title">🌿 Welcome</div>
-          <div className="auth-sub">{context === 'join' ? 'Sign in or register to join this walk.' : 'Join your local walking community.'}</div>
+          <div className="auth-sub">{context==='join' ? 'Sign in or register to join this walk.' : 'Join your local walking community.'}</div>
           <div className="auth-tabs">
             <button className={`auth-tab ${tab==='login'?'active':''}`} onClick={() => { setTab('login'); setError(''); }}>Sign In</button>
             <button className={`auth-tab ${tab==='register'?'active':''}`} onClick={() => { setTab('register'); setError(''); }}>Create Account</button>
           </div>
-          {tab === 'register' && <div className="field"><label>Your Name</label><input placeholder="Jane Smith" value={name} onChange={e => setName(e.target.value)} /></div>}
-          <div className="field"><label>Email</label><input type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} /></div>
-          <div className="field"><label>Password</label><input type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key==='Enter' && handle()} /></div>
+
+          {/* Face ID / Touch ID button — shown on login tab if browser supports it */}
+          {tab === 'login' && window.PasswordCredential && (
+            <>
+              <button className="btn-biometric" onClick={tryCredentialLogin} disabled={loading}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/>
+                  <path d="M8 12s1.5-2 4-2 4 2 4 2"/>
+                  <line x1="9" y1="9" x2="9.01" y2="9"/>
+                  <line x1="15" y1="9" x2="15.01" y2="9"/>
+                </svg>
+                Sign in with Face ID / Touch ID
+              </button>
+              <div className="biometric-divider">or sign in with email</div>
+            </>
+          )}
+
+          {tab === 'register' && <div className="field"><label>Your Name</label><input placeholder="Jane Smith" value={name} onChange={e => setName(e.target.value)} autoComplete="name" /></div>}
+
+          {/* Use proper autocomplete attributes so Safari offers to save & autofill */}
+          <div className="field">
+            <label>Email</label>
+            <input type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)}
+              autoComplete={tab==='register' ? 'email' : 'username'} inputMode="email" />
+          </div>
+          <div className="field">
+            <label>Password</label>
+            <input type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)}
+              onKeyDown={e => e.key==='Enter' && handle()}
+              autoComplete={tab==='register' ? 'new-password' : 'current-password'} />
+          </div>
+
           {error && <div className="error-msg">{error}</div>}
           <div style={{height:14}} />
-          <button className="btn-primary" onClick={handle} disabled={loading}>{loading ? 'Please wait...' : tab==='register' ? 'Create Account & Continue' : 'Sign In'}</button>
+          <button className="btn-primary" onClick={handle} disabled={loading}>
+            {loading ? 'Please wait...' : tab==='register' ? 'Create Account & Continue' : 'Sign In'}
+          </button>
         </div>
       );
     }
 
     // ── Walk Modal ─────────────────────────────────────────────────────────────
     function WalkModal({ walk, currentUser, onClose, onSave, mode }) {
-      const [title, setTitle] = useState(walk?.title || '');
-      const [date, setDate] = useState(walk?.date || '');
-      const [time, setTime] = useState(walk?.time || '');
-      const [location, setLocation] = useState(walk?.location || '');
-      const [description, setDescription] = useState(walk?.description || '');
+      const [title, setTitle] = useState(walk?.title||'');
+      const [date, setDate] = useState(walk?.date||'');
+      const [time, setTime] = useState(walk?.time||'');
+      const [location, setLocation] = useState(walk?.location||'');
+      const [description, setDescription] = useState(walk?.description||'');
       const [guestInput, setGuestInput] = useState('');
-      const [guests, setGuests] = useState(walk?.invitedGuests || []);
+      const [guests, setGuests] = useState(walk?.invitedGuests||[]);
       const [error, setError] = useState('');
       const [saving, setSaving] = useState(false);
 
-      const addGuest = () => { const g = guestInput.trim(); if (g && !guests.includes(g)) { setGuests([...guests, g]); setGuestInput(''); } };
-
+      const addGuest = () => { const g=guestInput.trim(); if(g&&!guests.includes(g)){setGuests([...guests,g]);setGuestInput('');} };
       const save = async () => {
-        if (!title.trim() || !date || !time || !location.trim()) { setError('Please fill in title, date, time and location.'); return; }
+        if(!title.trim()||!date||!time||!location.trim()){setError('Please fill in title, date, time and location.');return;}
         setSaving(true);
-        const walkData = {
-          id: walk?.id || genId(), title: title.trim(), date, time,
-          location: location.trim(), description: description.trim(),
-          invitedGuests: guests,
-          creatorId: walk?.creatorId || currentUser.id,
-          creatorName: walk?.creatorName || currentUser.name,
-          joinedUsers: walk?.joinedUsers || [],
-          status: walk?.status || 'active',
-          createdAt: walk?.createdAt || Date.now(),
-        };
+        const walkData = { id:walk?.id||genId(), title:title.trim(), date, time, location:location.trim(), description:description.trim(), invitedGuests:guests, creatorId:walk?.creatorId||currentUser.id, creatorName:walk?.creatorName||currentUser.name, joinedUsers:walk?.joinedUsers||[], status:walk?.status||'active', createdAt:walk?.createdAt||Date.now() };
         await onSave(walkData);
         setSaving(false);
       };
 
       return (
-        <div className="modal-overlay" onClick={e => e.target===e.currentTarget && onClose()}>
+        <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
           <div className="modal">
-            <div className="modal-title">{mode==='edit' ? 'Edit Walk' : 'Plan a New Walk'}</div>
-            <div className="field"><label>Walk Title</label><input placeholder="e.g. Morning Meadow Stroll" value={title} onChange={e => setTitle(e.target.value)} /></div>
+            <div className="modal-title">{mode==='edit'?'Edit Walk':'Plan a New Walk'}</div>
+            <div className="field"><label>Walk Title</label><input placeholder="e.g. Morning Meadow Stroll" value={title} onChange={e=>setTitle(e.target.value)} /></div>
             <div className="two-col">
-              <div className="field"><label>Date</label><input type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
-              <div className="field"><label>Start Time</label><input type="time" value={time} onChange={e => setTime(e.target.value)} /></div>
+              <div className="field"><label>Date</label><input type="date" value={date} onChange={e=>setDate(e.target.value)} /></div>
+              <div className="field"><label>Start Time</label><input type="time" value={time} onChange={e=>setTime(e.target.value)} /></div>
             </div>
-            <div className="field"><label>Start Location</label><input placeholder="e.g. Car park, Riverside Park" value={location} onChange={e => setLocation(e.target.value)} /></div>
-            <div className="field"><label>Description (optional)</label><textarea placeholder="Walk details, difficulty, what to bring..." value={description} onChange={e => setDescription(e.target.value)} /></div>
+            <div className="field"><label>Start Location</label><input placeholder="e.g. Car park, Riverside Park" value={location} onChange={e=>setLocation(e.target.value)} /></div>
+            <div className="field"><label>Description (optional)</label><textarea placeholder="Walk details, difficulty, what to bring..." value={description} onChange={e=>setDescription(e.target.value)} /></div>
             <div className="field">
               <label>Invite Guests by Name</label>
               <div className="guests-input-row">
-                <div className="field"><input placeholder="Guest name" value={guestInput} onChange={e => setGuestInput(e.target.value)} onKeyDown={e => e.key==='Enter' && addGuest()} /></div>
+                <div className="field"><input placeholder="Guest name" value={guestInput} onChange={e=>setGuestInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addGuest()} /></div>
                 <button className="btn-add-guest" onClick={addGuest}>+</button>
               </div>
-              <div style={{marginTop:6}}>{guests.map(g => <span key={g} className="invited-chip">{g}<button className="btn-remove-guest" onClick={() => setGuests(guests.filter(x=>x!==g))}>✕</button></span>)}</div>
+              <div style={{marginTop:6}}>{guests.map(g=><span key={g} className="invited-chip">{g}<button className="btn-remove-guest" onClick={()=>setGuests(guests.filter(x=>x!==g))}>✕</button></span>)}</div>
             </div>
             {error && <div className="error-msg">{error}</div>}
             <div className="modal-footer">
               <button className="btn-secondary" onClick={onClose}>Cancel</button>
-              <button className="btn-primary" style={{width:'auto',padding:'10px 28px'}} onClick={save} disabled={saving}>{saving ? 'Saving...' : mode==='edit' ? 'Save Changes' : 'Create Walk'}</button>
+              <button className="btn-primary" style={{width:'auto',padding:'10px 28px'}} onClick={save} disabled={saving}>{saving?'Saving...':mode==='edit'?'Save Changes':'Create Walk'}</button>
             </div>
           </div>
         </div>
@@ -481,14 +729,12 @@
     // ── Walk Detail Page ───────────────────────────────────────────────────────
     function WalkDetailPage({ walkId, currentUser, onLogin, onEdit, onCancel, onJoin, onLeave, allWalks }) {
       const [showShare, setShowShare] = useState(true);
-      const walk = allWalks.find(w => w.id === walkId);
+      const walk = allWalks.find(w=>w.id===walkId);
       if (!walk) return <div className="main"><div className="empty-state"><div className="empty-icon">🔍</div><div className="empty-title">Walk not found</div><div className="empty-sub">This walk may have been removed.</div></div></div>;
-
-      const isCreator = currentUser && walk.creatorId === currentUser.id;
-      const isJoined = currentUser && (walk.joinedUsers||[]).some(u => u.id===currentUser.id);
-      const isCancelled = walk.status === 'cancelled';
-      const total = (walk.invitedGuests?.length||0) + (walk.joinedUsers?.length||0);
-
+      const isCreator = currentUser&&walk.creatorId===currentUser.id;
+      const isJoined = currentUser&&(walk.joinedUsers||[]).some(u=>u.id===currentUser.id);
+      const isCancelled = walk.status==='cancelled';
+      const total = (walk.invitedGuests?.length||0)+(walk.joinedUsers?.length||0);
       return (
         <div className="main">
           <div className="walk-detail">
@@ -498,22 +744,22 @@
               <div className="walk-detail-organiser">Organised by {walk.creatorName}</div>
             </div>
             <div className="walk-detail-body">
-              {isCancelled && <div className="cancelled-banner">⚠️ This walk has been cancelled.</div>}
+              {isCancelled&&<div className="cancelled-banner">⚠️ This walk has been cancelled.</div>}
               <div className="walk-detail-meta">
                 <div className="meta-card"><div className="meta-card-icon">📅</div><div className="meta-card-label">Date</div><div className="meta-card-val">{formatDate(walk.date)}</div></div>
                 <div className="meta-card"><div className="meta-card-icon">🕐</div><div className="meta-card-label">Start Time</div><div className="meta-card-val">{formatTime(walk.time)}</div></div>
                 <div className="meta-card"><div className="meta-card-icon">📍</div><div className="meta-card-label">Meeting Point</div><div className="meta-card-val">{walk.location}</div></div>
                 <div className="meta-card"><div className="meta-card-icon">👥</div><div className="meta-card-label">Going</div><div className="meta-card-val">{total} {total===1?'person':'people'}</div></div>
               </div>
-              {walk.description && <div className="walk-detail-desc">{walk.description}</div>}
-              {total > 0 && <div className="walkers-section"><div className="walkers-title">Who's coming</div><div className="walkers-chips">{(walk.invitedGuests||[]).map(g=><span key={g} className="walker-chip">🙋 {g}</span>)}{(walk.joinedUsers||[]).map(u=><span key={u.id} className="walker-chip">✅ {u.name}</span>)}</div></div>}
-              {!isCancelled && showShare && <ShareBox walk={walk} />}
+              {walk.description&&<div className="walk-detail-desc">{walk.description}</div>}
+              {total>0&&<div className="walkers-section"><div className="walkers-title">Who's coming</div><div className="walkers-chips">{(walk.invitedGuests||[]).map(g=><span key={g} className="walker-chip">🙋 {g}</span>)}{(walk.joinedUsers||[]).map(u=><span key={u.id} className="walker-chip">✅ {u.name}</span>)}</div></div>}
+              {!isCancelled&&showShare&&<ShareBox walk={walk}/>}
               <div className="detail-actions">
-                {!isCancelled && <button className="btn-share" onClick={() => setShowShare(s=>!s)}>🔗 {showShare?'Hide share':'Share walk'}</button>}
-                {currentUser && isCreator && !isCancelled && <><button className="btn-secondary" onClick={() => onEdit(walk)}>Edit</button><button className="btn-danger" onClick={() => onCancel(walk.id)}>Cancel Walk</button></>}
-                {currentUser && !isCreator && !isCancelled && (isJoined ? <button className="btn-secondary" onClick={() => onLeave(walk.id)}>Leave Walk</button> : <button className="btn-primary" style={{width:'auto',padding:'10px 28px'}} onClick={() => onJoin(walk.id)}>✓ Join This Walk</button>)}
+                {!isCancelled&&<button className="btn-share" onClick={()=>setShowShare(s=>!s)}>🔗 {showShare?'Hide share':'Share walk'}</button>}
+                {currentUser&&isCreator&&!isCancelled&&<><button className="btn-secondary" onClick={()=>onEdit(walk)}>Edit</button><button className="btn-danger" onClick={()=>onCancel(walk.id)}>Cancel Walk</button></>}
+                {currentUser&&!isCreator&&!isCancelled&&(isJoined?<button className="btn-secondary" onClick={()=>onLeave(walk.id)}>Leave Walk</button>:<button className="btn-primary" style={{width:'auto',padding:'10px 28px'}} onClick={()=>onJoin(walk.id)}>✓ Join This Walk</button>)}
               </div>
-              {!currentUser && !isCancelled && <div className="join-prompt"><div className="join-prompt-title">Want to join this walk?</div><div className="join-prompt-sub">Create a free account or sign in to confirm your spot.</div><AuthPanel onLogin={onLogin} context="join" /></div>}
+              {!currentUser&&!isCancelled&&<div className="join-prompt"><div className="join-prompt-title">Want to join this walk?</div><div className="join-prompt-sub">Create a free account or sign in to confirm your spot.</div><AuthPanel onLogin={onLogin} context="join"/></div>}
             </div>
           </div>
         </div>
@@ -523,36 +769,36 @@
     // ── Walk Card ──────────────────────────────────────────────────────────────
     function WalkCard({ walk, currentUser, onEdit, onCancel, onJoin, onLeave, onViewDetail }) {
       const [showShare, setShowShare] = useState(false);
-      const isCreator = walk.creatorId === currentUser.id;
-      const isJoined = (walk.joinedUsers||[]).some(u => u.id===currentUser.id);
-      const isCancelled = walk.status === 'cancelled';
-      const total = (walk.invitedGuests?.length||0) + (walk.joinedUsers?.length||0);
+      const isCreator = walk.creatorId===currentUser.id;
+      const isJoined = (walk.joinedUsers||[]).some(u=>u.id===currentUser.id);
+      const isCancelled = walk.status==='cancelled';
+      const total = (walk.invitedGuests?.length||0)+(walk.joinedUsers?.length||0);
       return (
         <div className={`walk-card ${isCancelled?'cancelled':''}`}>
-          <div className={`walk-card-accent ${isCancelled?'cancelled':isCreator?'mine':''}`} />
+          <div className={`walk-card-accent ${isCancelled?'cancelled':isCreator?'mine':''}`}/>
           <div className="walk-card-body">
             <div className="walk-card-top">
-              <div className="walk-name" onClick={() => onViewDetail(walk.id)}>{walk.title}</div>
+              <div className="walk-name" onClick={()=>onViewDetail(walk.id)}>{walk.title}</div>
               <div style={{display:'flex',gap:5,flexShrink:0}}>
-                {isCancelled && <span className="walk-badge badge-cancelled">Cancelled</span>}
-                {!isCancelled && isCreator && <span className="walk-badge badge-yours">Your Walk</span>}
-                {!isCancelled && !isCreator && isJoined && <span className="walk-badge badge-joined">Joined</span>}
+                {isCancelled&&<span className="walk-badge badge-cancelled">Cancelled</span>}
+                {!isCancelled&&isCreator&&<span className="walk-badge badge-yours">Your Walk</span>}
+                {!isCancelled&&!isCreator&&isJoined&&<span className="walk-badge badge-joined">Joined</span>}
               </div>
             </div>
             <div className="walk-meta">
               <div className="meta-item">📅 {formatDate(walk.date)}</div>
               <div className="meta-item">🕐 {formatTime(walk.time)}</div>
               <div className="meta-item">📍 {walk.location}</div>
-              {total > 0 && <div className="meta-item">👥 {total} going</div>}
+              {total>0&&<div className="meta-item">👥 {total} going</div>}
             </div>
-            {walk.description && <div className="walk-desc">{walk.description}</div>}
-            {total > 0 && <div className="walk-guests"><div className="guests-label">Who's coming</div><div className="guests-list">{(walk.invitedGuests||[]).map(g=><span key={g} className="guest-chip">🙋 {g}</span>)}{(walk.joinedUsers||[]).map(u=><span key={u.id} className="guest-chip">✅ {u.name}</span>)}</div></div>}
-            {showShare && <ShareBox walk={walk} />}
+            {walk.description&&<div className="walk-desc">{walk.description}</div>}
+            {total>0&&<div className="walk-guests"><div className="guests-label">Who's coming</div><div className="guests-list">{(walk.invitedGuests||[]).map(g=><span key={g} className="guest-chip">🙋 {g}</span>)}{(walk.joinedUsers||[]).map(u=><span key={u.id} className="guest-chip">✅ {u.name}</span>)}</div></div>}
+            {showShare&&<ShareBox walk={walk}/>}
             <div className="walk-actions">
-              {!isCancelled && <button className="btn-share" onClick={() => setShowShare(s=>!s)}>🔗 Share</button>}
-              <button className="btn-secondary" onClick={() => onViewDetail(walk.id)}>View</button>
-              {isCreator && !isCancelled && <><button className="btn-secondary" onClick={() => onEdit(walk)}>Edit</button><button className="btn-danger" onClick={() => onCancel(walk.id)}>Cancel</button></>}
-              {!isCreator && !isCancelled && (isJoined ? <button className="btn-secondary" onClick={() => onLeave(walk.id)}>Leave</button> : <button className="btn-primary" style={{width:'auto',padding:'9px 18px',fontSize:13}} onClick={() => onJoin(walk.id)}>Join Walk</button>)}
+              {!isCancelled&&<button className="btn-share" onClick={()=>setShowShare(s=>!s)}>🔗 Share</button>}
+              <button className="btn-secondary" onClick={()=>onViewDetail(walk.id)}>View</button>
+              {isCreator&&!isCancelled&&<><button className="btn-secondary" onClick={()=>onEdit(walk)}>Edit</button><button className="btn-danger" onClick={()=>onCancel(walk.id)}>Cancel</button></>}
+              {!isCreator&&!isCancelled&&(isJoined?<button className="btn-secondary" onClick={()=>onLeave(walk.id)}>Leave</button>:<button className="btn-primary" style={{width:'auto',padding:'9px 18px',fontSize:13}} onClick={()=>onJoin(walk.id)}>Join Walk</button>)}
             </div>
           </div>
         </div>
@@ -562,7 +808,8 @@
     // ── Main App ───────────────────────────────────────────────────────────────
     function App() {
       const [walks, setWalks] = useState([]);
-      const [currentUser, setCurrentUser] = useState(null);
+      // Restore session from localStorage on first load
+      const [currentUser, setCurrentUser] = useState(() => loadSession());
       const [showModal, setShowModal] = useState(false);
       const [editingWalk, setEditingWalk] = useState(null);
       const [filter, setFilter] = useState('all');
@@ -579,111 +826,108 @@
 
       useEffect(() => {
         const start = () => {
-          try {
-            unsubRef.current = getDB().listenWalks(liveWalks => { setWalks(liveWalks); setDbStatus('connected'); });
-          } catch(e) { setDbStatus('error'); }
+          try { unsubRef.current = getDB().listenWalks(lw => { setWalks(lw); setDbStatus('connected'); }); }
+          catch(e) { setDbStatus('error'); }
         };
-        if (window._db) { start(); } else { window.addEventListener('firebase-ready', start, { once: true }); }
-        return () => { if (unsubRef.current) unsubRef.current(); };
+        if (window._db) { start(); } else { window.addEventListener('firebase-ready', start, {once:true}); }
+        return () => { if(unsubRef.current) unsubRef.current(); };
       }, []);
 
-      const goHome = () => { window.location.hash = ''; setDetailWalkId(null); };
-      const goDetail = id => { window.location.hash = `walk/${id}`; setDetailWalkId(id); };
+      const handleLogin = (user) => { setCurrentUser(user); saveSession(user); };
+      const handleLogout = () => { setCurrentUser(null); clearSession(); };
 
+      const goHome = () => { window.location.hash=''; setDetailWalkId(null); };
+      const goDetail = id => { window.location.hash=`walk/${id}`; setDetailWalkId(id); };
       const handleSaveWalk = async (walk) => { await getDB().saveWalk(walk); setShowModal(false); setEditingWalk(null); };
-      const handleCancel = async (id) => { if (!window.confirm('Cancel this walk?')) return; await getDB().updateWalk(id, { status: 'cancelled' }); };
+      const handleCancel = async (id) => { if(!window.confirm('Cancel this walk?'))return; await getDB().updateWalk(id,{status:'cancelled'}); };
       const handleJoin = async (id) => {
-        if (!currentUser) return;
-        const walk = walks.find(w => w.id===id);
-        if (!walk || (walk.joinedUsers||[]).some(u => u.id===currentUser.id)) return;
-        await getDB().updateWalk(id, { joinedUsers: [...(walk.joinedUsers||[]), { id: currentUser.id, name: currentUser.name }] });
+        if(!currentUser)return;
+        const walk=walks.find(w=>w.id===id);
+        if(!walk||(walk.joinedUsers||[]).some(u=>u.id===currentUser.id))return;
+        await getDB().updateWalk(id,{joinedUsers:[...(walk.joinedUsers||[]),{id:currentUser.id,name:currentUser.name}]});
       };
       const handleLeave = async (id) => {
-        const walk = walks.find(w => w.id===id);
-        if (!walk) return;
-        await getDB().updateWalk(id, { joinedUsers: (walk.joinedUsers||[]).filter(u => u.id!==currentUser.id) });
+        const walk=walks.find(w=>w.id===id);
+        if(!walk)return;
+        await getDB().updateWalk(id,{joinedUsers:(walk.joinedUsers||[]).filter(u=>u.id!==currentUser.id)});
       };
 
       const isDetailPage = !!detailWalkId;
       const filteredWalks = walks
-        .filter(w => { if (!currentUser) return true; if (filter==='mine') return w.creatorId===currentUser.id; if (filter==='joined') return (w.joinedUsers||[]).some(u=>u.id===currentUser.id); if (filter==='upcoming') return w.status==='active' && new Date(`${w.date}T${w.time}`)>=new Date(); return true; })
-        .sort((a,b) => new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`));
+        .filter(w=>{if(!currentUser)return true;if(filter==='mine')return w.creatorId===currentUser.id;if(filter==='joined')return(w.joinedUsers||[]).some(u=>u.id===currentUser.id);if(filter==='upcoming')return w.status==='active'&&new Date(`${w.date}T${w.time}`)>=new Date();return true;})
+        .sort((a,b)=>new Date(`${a.date}T${a.time}`)-new Date(`${b.date}T${b.time}`));
 
       return (
         <>
           <header className="header">
             <div className="header-brand" onClick={goHome}>
-              <span className="header-icon">🥾</span>
+              <HikerLogo size={40} className="header-logo" />
               <span className="header-title">Local Walks</span>
             </div>
             <div className="header-right">
-              {isDetailPage && <button className="btn-back" onClick={goHome}>← All Walks</button>}
-              {currentUser && <span className="user-badge">👋 {currentUser.name}</span>}
-              {currentUser && <button className="btn-logout" onClick={() => setCurrentUser(null)}>Sign out</button>}
+              {isDetailPage&&<button className="btn-back" onClick={goHome}>← All Walks</button>}
+              {currentUser&&<span className="user-badge">👋 {currentUser.name}</span>}
+              {currentUser&&<button className="btn-logout" onClick={handleLogout}>Sign out</button>}
             </div>
           </header>
 
           {isDetailPage ? (
-            <WalkDetailPage walkId={detailWalkId} currentUser={currentUser} onLogin={setCurrentUser}
-              onEdit={w => { setEditingWalk(w); setShowModal(true); }} onCancel={handleCancel}
-              onJoin={handleJoin} onLeave={handleLeave} allWalks={walks} />
+            <WalkDetailPage walkId={detailWalkId} currentUser={currentUser} onLogin={handleLogin}
+              onEdit={w=>{setEditingWalk(w);setShowModal(true);}} onCancel={handleCancel}
+              onJoin={handleJoin} onLeave={handleLeave} allWalks={walks}/>
           ) : !currentUser ? (
             <main className="main">
               <div className="hero">
+                <HikerLogo size={100} className="hero-logo"/>
                 <div className="hero-title">Explore Together</div>
                 <div className="hero-sub">Organise local walks, invite friends and discover new routes</div>
               </div>
-              {dbStatus === 'connecting' && <div className="status-bar connecting" style={{maxWidth:420,margin:'0 auto 20px'}}><div className="status-dot connecting" /> Connecting to database...</div>}
-              {dbStatus === 'error' && <div className="status-bar error" style={{maxWidth:420,margin:'0 auto 20px'}}><div className="status-dot error" /> Could not reach database.</div>}
-              {dbStatus === 'connected' && <AuthPanel onLogin={setCurrentUser} context="home" />}
+              {dbStatus==='connecting'&&<div className="status-bar connecting" style={{maxWidth:420,margin:'0 auto 20px'}}><div className="status-dot connecting"/> Connecting to database...</div>}
+              {dbStatus==='error'&&<div className="status-bar error" style={{maxWidth:420,margin:'0 auto 20px'}}><div className="status-dot error"/> Could not reach database.</div>}
+              {dbStatus==='connected'&&<AuthPanel onLogin={handleLogin} context="home"/>}
             </main>
           ) : (
             <main className="main">
               <div className="section-header">
                 <div className="section-title">Upcoming Walks</div>
-                <button className="btn-new-walk" onClick={() => { setEditingWalk(null); setShowModal(true); }}>+ Plan a Walk</button>
+                <button className="btn-new-walk" onClick={()=>{setEditingWalk(null);setShowModal(true);}}>+ Plan a Walk</button>
               </div>
-              <div className={`status-bar ${dbStatus}`}><div className={`status-dot ${dbStatus}`} />{dbStatus==='connected'?'● Live — changes sync instantly':dbStatus==='connecting'?'Connecting...':'Connection error'}</div>
+              <div className={`status-bar ${dbStatus}`}><div className={`status-dot ${dbStatus}`}/>{dbStatus==='connected'?'● Live — changes sync instantly':dbStatus==='connecting'?'Connecting...':'Connection error'}</div>
               <div className="filter-bar">
-                {[['all','All Walks'],['upcoming','Upcoming'],['mine','My Walks'],['joined','Joined']].map(([val,label]) => (
-                  <button key={val} className={`filter-btn ${filter===val?'active':''}`} onClick={() => setFilter(val)}>{label}</button>
+                {[['all','All Walks'],['upcoming','Upcoming'],['mine','My Walks'],['joined','Joined']].map(([val,label])=>(
+                  <button key={val} className={`filter-btn ${filter===val?'active':''}`} onClick={()=>setFilter(val)}>{label}</button>
                 ))}
               </div>
-              {filteredWalks.length === 0 ? (
+              {filteredWalks.length===0?(
                 <div className="empty-state"><div className="empty-icon">🌳</div><div className="empty-title">No walks here yet</div><div className="empty-sub">Plan your first walk and share it with friends!</div></div>
-              ) : (
+              ):(
                 <div className="walks-grid">
-                  {filteredWalks.map(walk => (
+                  {filteredWalks.map(walk=>(
                     <WalkCard key={walk.id} walk={walk} currentUser={currentUser}
-                      onEdit={w => { setEditingWalk(w); setShowModal(true); }}
-                      onCancel={handleCancel} onJoin={handleJoin} onLeave={handleLeave} onViewDetail={goDetail} />
+                      onEdit={w=>{setEditingWalk(w);setShowModal(true);}}
+                      onCancel={handleCancel} onJoin={handleJoin} onLeave={handleLeave} onViewDetail={goDetail}/>
                   ))}
                 </div>
               )}
             </main>
           )}
 
-          {showModal && currentUser && (
+          {showModal&&currentUser&&(
             <WalkModal walk={editingWalk} currentUser={currentUser} mode={editingWalk?'edit':'create'}
-              onClose={() => { setShowModal(false); setEditingWalk(null); }} onSave={handleSaveWalk} />
+              onClose={()=>{setShowModal(false);setEditingWalk(null);}} onSave={handleSaveWalk}/>
           )}
         </>
       );
     }
 
-    // Wait for Firebase before rendering
     function Root() {
       const [ready, setReady] = useState(!!window._db);
-      useEffect(() => {
-        if (!window._db) {
-          window.addEventListener('firebase-ready', () => setReady(true), { once: true });
-        }
-      }, []);
-      if (!ready) return <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',fontFamily:'DM Sans,sans-serif',color:'#3B5C4A',fontSize:16}}>🌿 Loading...</div>;
-      return <App />;
+      useEffect(() => { if(!window._db){window.addEventListener('firebase-ready',()=>setReady(true),{once:true});} },[]);
+      if(!ready) return <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',fontFamily:'DM Sans,sans-serif',color:'#3B5C4A',fontSize:16}}>🌿 Loading...</div>;
+      return <App/>;
     }
 
-    ReactDOM.createRoot(document.getElementById('root')).render(<Root />);
+    ReactDOM.createRoot(document.getElementById('root')).render(<Root/>);
   </script>
 </body>
 </html>
