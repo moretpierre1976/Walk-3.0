@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Local Walks 🥾</title>
+  <meta name="description" content="Organise local walks, invite friends and discover new routes." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <!-- React + Babel (no build step needed) -->
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.10/babel.min.js"></script>
+
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+    import {
+      getFirestore, collection, doc, getDoc, setDoc, updateDoc,
+      onSnapshot, query, orderBy, serverTimestamp
+    } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAN_nzc5VvyQPUyzjkNqfAVaVrKcYI4V1Q",
+      authDomain: "newwalk-ebd2b.firebaseapp.com",
+      projectId: "newwalk-ebd2b",
+      storageBucket: "newwalk-ebd2b.firebasestorage.app",
+      messagingSenderId: "787048551840",
+      appId: "1:787048551840:web:fc6d03eb2ba46d183a40c5"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window._db = {
+      getUser: async (email) => {
+        const snap = await getDoc(doc(db, 'users', email));
+        return snap.exists() ? snap.data() : null;
+      },
+      createUser: async (user) => {
+        await setDoc(doc(db, 'users', user.email), { ...user, createdAt: serverTimestamp() });
+      },
+      saveWalk: async (walk) => {
+        await setDoc(doc(db, 'walks', walk.id), { ...walk, updatedAt: serverTimestamp() });
+      },
+      updateWalk: async (id, fields) => {
+        await updateDoc(doc(db, 'walks', id), { ...fields, updatedAt: serverTimestamp() });
+      },
+      listenWalks: (callback) => {
+        const q = query(collection(db, 'walks'), orderBy('createdAt', 'asc'));
+        return onSnapshot(q, (snap) => {
+          callback(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        });
+      }
+    };
+
+    window.dispatchEvent(new Event('firebase-ready'));
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body, #root { min-height: 100vh; }
+    body { font-family: 'DM Sans', sans-serif; background: #F5F0E8; color: #2C2C2C; }
+
+    .header { background: #3B5C4A; padding: 18px 28px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 20px rgba(59,92,74,0.3); }
+    .header-brand { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .header-icon { font-size: 26px; }
+    .header-title { font-family: 'Playfair Display', serif; font-size: 20px; color: #F5F0E8; }
+    .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .user-badge { background: rgba(255,255,255,0.15); color: #F5F0E8; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500; }
+    .btn-logout { background: transparent; border: 1px solid rgba(255,255,255,0.4); color: #B8CEBF; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
+    .btn-logout:hover { background: rgba(255,255,255,0.1); color: #fff; }
+    .btn-back { background: rgba(255,255,255,0.15); border: none; color: #F5F0E8; padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; font-family: 'DM Sans', sans-serif; transition: background 0.2s; }
+    .btn-back:hover { background: rgba(255,255,255,0.25); }
+
+    .main { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+    .hero { text-align: center; margin-bottom: 40px; }
+    .hero-title { font-family: 'Playfair Display', serif; font-size: 40px; color: #3B5C4A; line-height: 1.2; margin-bottom: 10px; }
+    .hero-sub { color: #8C8478; font-size: 15px; font-weight: 300; }
+
+    .auth-panel { max-width: 420px; margin: 0 auto; background: #fff; border-radius: 20px; padding: 36px; box-shadow: 0 8px 40px rgba(59,92,74,0.12); }
+    .auth-title { font-family: 'Playfair Display', serif; font-size: 24px; color: #3B5C4A; margin-bottom: 6px; }
+    .auth-sub { color: #8C8478; font-size: 13px; margin-bottom: 24px; line-height: 1.5; }
+    .auth-tabs { display: flex; gap: 4px; margin-bottom: 24px; background: #E8DFD0; border-radius: 10px; padding: 4px; }
+    .auth-tab { flex: 1; padding: 9px; border-radius: 8px; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; transition: all 0.2s; background: transparent; color: #8C8478; }
+    .auth-tab.active { background: #3B5C4A; color: #fff; box-shadow: 0 2px 8px rgba(59,92,74,0.25); }
+
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-size: 11px; font-weight: 600; color: #3B5C4A; margin-bottom: 6px; letter-spacing: 0.6px; text-transform: uppercase; }
+    .field input, .field textarea { width: 100%; padding: 11px 14px; border: 1.5px solid #B8CEBF; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 14px; color: #2C2C2C; background: #F5F0E8; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+    .field input:focus, .field textarea:focus { border-color: #7C9B8A; box-shadow: 0 0 0 3px rgba(124,155,138,0.15); }
+    .field textarea { resize: vertical; min-height: 75px; }
+
+    .btn-primary { width: 100%; padding: 13px; background: #3B5C4A; color: #fff; border: none; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+    .btn-primary:hover { background: #4A6741; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(59,92,74,0.3); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-secondary { padding: 9px 18px; background: #E8DFD0; color: #3B5C4A; border: 1.5px solid #B8CEBF; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+    .btn-secondary:hover { background: #B8CEBF; }
+    .btn-danger { padding: 9px 18px; background: transparent; color: #C0392B; border: 1.5px solid #C0392B; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+    .btn-danger:hover { background: #C0392B; color: #fff; }
+    .error-msg { color: #C0392B; font-size: 12px; margin-top: 8px; text-align: center; background: #fdf0f0; border-radius: 8px; padding: 8px 12px; }
+
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+    .section-title { font-family: 'Playfair Display', serif; font-size: 26px; color: #3B5C4A; }
+    .btn-new-walk { display: flex; align-items: center; gap: 8px; padding: 11px 22px; background: #D4863A; color: #fff; border: none; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+    .btn-new-walk:hover { background: #c07830; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(212,134,58,0.4); }
+
+    .filter-bar { display: flex; gap: 8px; margin-bottom: 22px; flex-wrap: wrap; }
+    .filter-btn { padding: 7px 16px; border-radius: 20px; border: 1.5px solid #B8CEBF; background: transparent; color: #8C8478; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+    .filter-btn.active { background: #3B5C4A; color: #fff; border-color: #3B5C4A; }
+    .walks-grid { display: grid; gap: 18px; }
+
+    .walk-card { background: #fff; border-radius: 18px; box-shadow: 0 4px 20px rgba(59,92,74,0.08); overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; border: 1.5px solid transparent; }
+    .walk-card:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(59,92,74,0.14); border-color: #B8CEBF; }
+    .walk-card.cancelled { opacity: 0.6; }
+    .walk-card-accent { height: 5px; background: linear-gradient(90deg, #7C9B8A, #7BA7BC); }
+    .walk-card-accent.cancelled { background: #A0A0A0; }
+    .walk-card-accent.mine { background: linear-gradient(90deg, #D4863A, #6B4E3D); }
+    .walk-card-body { padding: 20px 22px; }
+    .walk-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 10px; }
+    .walk-name { font-family: 'Playfair Display', serif; font-size: 19px; color: #3B5C4A; line-height: 1.2; cursor: pointer; }
+    .walk-name:hover { text-decoration: underline; text-decoration-color: #7C9B8A; }
+    .walk-badge { font-size: 10px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; white-space: nowrap; }
+    .badge-yours { background: #FEF0DC; color: #D4863A; }
+    .badge-joined { background: #E8F4EC; color: #4A6741; }
+    .badge-cancelled { background: #F0F0F0; color: #8C8478; }
+    .walk-meta { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+    .meta-item { display: flex; align-items: center; gap: 5px; font-size: 13px; color: #8C8478; }
+    .walk-desc { font-size: 13px; color: #8C8478; line-height: 1.6; margin-bottom: 14px; font-weight: 300; }
+    .walk-guests { margin-bottom: 14px; }
+    .guests-label { font-size: 10px; font-weight: 600; color: #8C8478; letter-spacing: 0.6px; text-transform: uppercase; margin-bottom: 7px; }
+    .guests-list { display: flex; flex-wrap: wrap; gap: 5px; }
+    .guest-chip { background: #E8DFD0; color: #6B4E3D; font-size: 12px; padding: 4px 10px; border-radius: 20px; }
+    .walk-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+    .btn-share { display: flex; align-items: center; gap: 6px; padding: 9px 16px; background: #7C9B8A; color: #fff; border: none; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+    .btn-share:hover { background: #3B5C4A; }
+    .share-box { background: #E8DFD0; border: 1.5px solid #B8CEBF; border-radius: 14px; padding: 16px 18px; margin-top: 14px; }
+    .share-box-title { font-size: 11px; font-weight: 600; color: #3B5C4A; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 12px; }
+    .share-url-row { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+    .share-url-input { flex: 1; padding: 9px 12px; background: #fff; border: 1.5px solid #B8CEBF; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 12px; color: #8C8478; outline: none; min-width: 0; }
+    .btn-copy { padding: 9px 14px; background: #3B5C4A; color: #fff; border: none; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+    .btn-copy:hover { background: #4A6741; }
+    .btn-copy.copied { background: #7C9B8A; }
+    .share-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn-whatsapp { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; background: #25D366; color: #fff; border: none; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; text-decoration: none; }
+    .btn-whatsapp:hover { background: #1da851; }
+    .btn-sms { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; background: #7BA7BC; color: #fff; border: none; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; text-decoration: none; }
+
+    .walk-detail { background: #fff; border-radius: 22px; box-shadow: 0 8px 40px rgba(59,92,74,0.1); overflow: hidden; }
+    .walk-detail-hero { background: linear-gradient(135deg, #3B5C4A 0%, #4A6741 100%); padding: 40px 36px 36px; }
+    .walk-detail-label { display: inline-block; background: rgba(255,255,255,0.2); color: #F5F0E8; font-size: 11px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; padding: 5px 12px; border-radius: 20px; margin-bottom: 16px; }
+    .walk-detail-title { font-family: 'Playfair Display', serif; font-size: 34px; color: #fff; line-height: 1.2; margin-bottom: 8px; }
+    .walk-detail-organiser { font-size: 14px; color: rgba(255,255,255,0.7); }
+    .walk-detail-body { padding: 32px 36px; }
+    .walk-detail-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 28px; }
+    .meta-card { background: #F5F0E8; border-radius: 12px; padding: 16px; }
+    .meta-card-icon { font-size: 20px; margin-bottom: 6px; }
+    .meta-card-label { font-size: 10px; font-weight: 600; color: #8C8478; letter-spacing: 0.6px; text-transform: uppercase; margin-bottom: 4px; }
+    .meta-card-val { font-size: 14px; font-weight: 500; color: #3B5C4A; line-height: 1.4; }
+    .walk-detail-desc { font-size: 15px; color: #8C8478; line-height: 1.7; margin-bottom: 28px; font-weight: 300; }
+    .walkers-section { margin-bottom: 28px; }
+    .walkers-title { font-size: 11px; font-weight: 600; color: #8C8478; letter-spacing: 0.6px; text-transform: uppercase; margin-bottom: 10px; }
+    .walkers-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .walker-chip { background: #E8DFD0; color: #6B4E3D; font-size: 13px; padding: 6px 14px; border-radius: 20px; }
+    .detail-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; padding-top: 24px; border-top: 1px solid #E8DFD0; }
+    .cancelled-banner { background: #F5E8E8; border: 1.5px solid #F0CCCC; color: #C0392B; border-radius: 12px; padding: 14px 18px; margin-bottom: 24px; font-size: 14px; font-weight: 500; }
+    .join-prompt { background: #E8DFD0; border-radius: 16px; padding: 24px; margin-top: 24px; }
+    .join-prompt-title { font-family: 'Playfair Display', serif; font-size: 20px; color: #3B5C4A; margin-bottom: 6px; }
+    .join-prompt-sub { font-size: 13px; color: #8C8478; margin-bottom: 20px; }
+
+    .modal-overlay { position: fixed; inset: 0; background: rgba(43,55,47,0.6); backdrop-filter: blur(4px); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .modal { background: #fff; border-radius: 22px; padding: 34px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(43,55,47,0.25); animation: slideUp 0.25s ease; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .modal-title { font-family: 'Playfair Display', serif; font-size: 24px; color: #3B5C4A; margin-bottom: 22px; }
+    .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .guests-input-row { display: flex; gap: 8px; align-items: flex-end; }
+    .guests-input-row .field { flex: 1; margin-bottom: 0; }
+    .btn-add-guest { padding: 0 16px; background: #7C9B8A; color: #fff; border: none; border-radius: 10px; cursor: pointer; font-size: 20px; height: 42px; display: flex; align-items: center; transition: background 0.2s; flex-shrink: 0; }
+    .btn-add-guest:hover { background: #3B5C4A; }
+    .invited-chip { display: inline-flex; align-items: center; gap: 4px; background: #E8DFD0; color: #6B4E3D; font-size: 12px; padding: 4px 8px 4px 12px; border-radius: 20px; margin: 4px 4px 0 0; }
+    .btn-remove-guest { background: none; border: none; color: #8C8478; cursor: pointer; font-size: 13px; padding: 0 2px; }
+
+    .status-bar { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 10px; font-size: 13px; margin-bottom: 20px; }
+    .status-bar.connecting { background: #FEF9DC; color: #8a7000; }
+    .status-bar.connected { background: #E8F4EC; color: #4A6741; }
+    .status-bar.error { background: #fdf0f0; color: #C0392B; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .status-dot.connecting { background: #f0c000; animation: pulse 1.2s infinite; }
+    .status-dot.connected { background: #4A6741; }
+    .status-dot.error { background: #C0392B; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    .empty-state { text-align: center; padding: 60px 20px; }
+    .empty-icon { font-size: 52px; margin-bottom: 16px; }
+    .empty-title { font-family: 'Playfair Display', serif; font-size: 22px; color: #3B5C4A; margin-bottom: 8px; }
+    .empty-sub { font-size: 14px; color: #8C8478; font-weight: 300; }
+
+    @media (max-width: 520px) {
+      .walk-detail-hero { padding: 28px 20px 24px; }
+      .walk-detail-body { padding: 24px 20px; }
+      .walk-detail-title { font-size: 26px; }
+      .two-col { grid-template-columns: 1fr; }
+      .header { padding: 14px 16px; }
+      .main { padding: 24px 14px; }
+      .hero-title { font-size: 30px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" data-presets="react">
+    const { useState, useEffect, useRef } = React;
+
+    const genId = () => Math.random().toString(36).slice(2, 10);
+    const formatDate = (d) => new Date(d).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const formatTime = (t) => { const [h, m] = t.split(':'); const hour = parseInt(h); return `${hour % 12 || 12}:${m} ${hour < 12 ? 'AM' : 'PM'}`; };
+    const getWalkIdFromHash = () => { const match = window.location.hash.match(/^#walk\/([a-z0-9]+)$/); return match ? match[1] : null; };
+    const walkShareUrl = (id) => `${window.location.origin}${window.location.pathname}#walk/${id}`;
+
+    // Wait for Firebase to be ready, then get the db helpers
+    const getDB = () => window._db;
+
+    // ── Share Box ──────────────────────────────────────────────────────────────
+    function ShareBox({ walk }) {
+      const [copied, setCopied] = useState(false);
+      const url = walkShareUrl(walk.id);
+      const text = `🥾 Join me for a walk!\n\n*${walk.title}*\n📅 ${formatDate(walk.date)} at ${formatTime(walk.time)}\n📍 ${walk.location}\n\nJoin here: ${url}`;
+      const copy = () => { navigator.clipboard.writeText(url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2200); }); };
+      return (
+        <div className="share-box">
+          <div className="share-box-title">🔗 Share this walk</div>
+          <div className="share-url-row">
+            <input className="share-url-input" readOnly value={url} onClick={e => e.target.select()} />
+            <button className={`btn-copy ${copied ? 'copied' : ''}`} onClick={copy}>{copied ? '✓ Copied!' : 'Copy link'}</button>
+          </div>
+          <div className="share-actions">
+            <a className="btn-whatsapp" href={`https://wa.me/?text=${encodeURIComponent(text)}`} target="_blank" rel="noopener noreferrer">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+              WhatsApp
+            </a>
+            <a className="btn-sms" href={`sms:?body=${encodeURIComponent(text)}`}>💬 Text Message</a>
+          </div>
+        </div>
+      );
+    }
+
+    // ── Auth Panel ─────────────────────────────────────────────────────────────
+    function AuthPanel({ onLogin, context }) {
+      const [tab, setTab] = useState('login');
+      const [name, setName] = useState('');
+      const [email, setEmail] = useState('');
+      const [password, setPassword] = useState('');
+      const [error, setError] = useState('');
+      const [loading, setLoading] = useState(false);
+
+      const handle = async () => {
+        setError('');
+        const ev = email.trim().toLowerCase(), pv = password.trim(), nv = name.trim();
+        if (!ev || !pv || (tab === 'register' && !nv)) { setError('Please fill in all fields.'); return; }
+        setLoading(true);
+        try {
+          const db = getDB();
+          const existing = await db.getUser(ev);
+          if (tab === 'register') {
+            if (existing) { setError('Email already registered. Please sign in.'); setLoading(false); return; }
+            const user = { id: genId(), name: nv, email: ev, password: pv };
+            await db.createUser(user);
+            onLogin(user);
+          } else {
+            if (!existing) { setError('No account found. Please register first.'); setLoading(false); return; }
+            if (existing.password !== pv) { setError('Incorrect password.'); setLoading(false); return; }
+            onLogin(existing);
+          }
+        } catch(e) { setError('Connection error. Try again.'); console.error(e); }
+        setLoading(false);
+      };
+
+      return (
+        <div className="auth-panel">
+          <div className="auth-title">🌿 Welcome</div>
+          <div className="auth-sub">{context === 'join' ? 'Sign in or register to join this walk.' : 'Join your local walking community.'}</div>
+          <div className="auth-tabs">
+            <button className={`auth-tab ${tab==='login'?'active':''}`} onClick={() => { setTab('login'); setError(''); }}>Sign In</button>
+            <button className={`auth-tab ${tab==='register'?'active':''}`} onClick={() => { setTab('register'); setError(''); }}>Create Account</button>
+          </div>
+          {tab === 'register' && <div className="field"><label>Your Name</label><input placeholder="Jane Smith" value={name} onChange={e => setName(e.target.value)} /></div>}
+          <div className="field"><label>Email</label><input type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} /></div>
+          <div className="field"><label>Password</label><input type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key==='Enter' && handle()} /></div>
+          {error && <div className="error-msg">{error}</div>}
+          <div style={{height:14}} />
+          <button className="btn-primary" onClick={handle} disabled={loading}>{loading ? 'Please wait...' : tab==='register' ? 'Create Account & Continue' : 'Sign In'}</button>
+        </div>
+      );
+    }
+
+    // ── Walk Modal ─────────────────────────────────────────────────────────────
+    function WalkModal({ walk, currentUser, onClose, onSave, mode }) {
+      const [title, setTitle] = useState(walk?.title || '');
+      const [date, setDate] = useState(walk?.date || '');
+      const [time, setTime] = useState(walk?.time || '');
+      const [location, setLocation] = useState(walk?.location || '');
+      const [description, setDescription] = useState(walk?.description || '');
+      const [guestInput, setGuestInput] = useState('');
+      const [guests, setGuests] = useState(walk?.invitedGuests || []);
+      const [error, setError] = useState('');
+      const [saving, setSaving] = useState(false);
+
+      const addGuest = () => { const g = guestInput.trim(); if (g && !guests.includes(g)) { setGuests([...guests, g]); setGuestInput(''); } };
+
+      const save = async () => {
+        if (!title.trim() || !date || !time || !location.trim()) { setError('Please fill in title, date, time and location.'); return; }
+        setSaving(true);
+        const walkData = {
+          id: walk?.id || genId(), title: title.trim(), date, time,
+          location: location.trim(), description: description.trim(),
+          invitedGuests: guests,
+          creatorId: walk?.creatorId || currentUser.id,
+          creatorName: walk?.creatorName || currentUser.name,
+          joinedUsers: walk?.joinedUsers || [],
+          status: walk?.status || 'active',
+          createdAt: walk?.createdAt || Date.now(),
+        };
+        await onSave(walkData);
+        setSaving(false);
+      };
+
+      return (
+        <div className="modal-overlay" onClick={e => e.target===e.currentTarget && onClose()}>
+          <div className="modal">
+            <div className="modal-title">{mode==='edit' ? 'Edit Walk' : 'Plan a New Walk'}</div>
+            <div className="field"><label>Walk Title</label><input placeholder="e.g. Morning Meadow Stroll" value={title} onChange={e => setTitle(e.target.value)} /></div>
+            <div className="two-col">
+              <div className="field"><label>Date</label><input type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
+              <div className="field"><label>Start Time</label><input type="time" value={time} onChange={e => setTime(e.target.value)} /></div>
+            </div>
+            <div className="field"><label>Start Location</label><input placeholder="e.g. Car park, Riverside Park" value={location} onChange={e => setLocation(e.target.value)} /></div>
+            <div className="field"><label>Description (optional)</label><textarea placeholder="Walk details, difficulty, what to bring..." value={description} onChange={e => setDescription(e.target.value)} /></div>
+            <div className="field">
+              <label>Invite Guests by Name</label>
+              <div className="guests-input-row">
+                <div className="field"><input placeholder="Guest name" value={guestInput} onChange={e => setGuestInput(e.target.value)} onKeyDown={e => e.key==='Enter' && addGuest()} /></div>
+                <button className="btn-add-guest" onClick={addGuest}>+</button>
+              </div>
+              <div style={{marginTop:6}}>{guests.map(g => <span key={g} className="invited-chip">{g}<button className="btn-remove-guest" onClick={() => setGuests(guests.filter(x=>x!==g))}>✕</button></span>)}</div>
+            </div>
+            {error && <div className="error-msg">{error}</div>}
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={onClose}>Cancel</button>
+              <button className="btn-primary" style={{width:'auto',padding:'10px 28px'}} onClick={save} disabled={saving}>{saving ? 'Saving...' : mode==='edit' ? 'Save Changes' : 'Create Walk'}</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ── Walk Detail Page ───────────────────────────────────────────────────────
+    function WalkDetailPage({ walkId, currentUser, onLogin, onEdit, onCancel, onJoin, onLeave, allWalks }) {
+      const [showShare, setShowShare] = useState(true);
+      const walk = allWalks.find(w => w.id === walkId);
+      if (!walk) return <div className="main"><div className="empty-state"><div className="empty-icon">🔍</div><div className="empty-title">Walk not found</div><div className="empty-sub">This walk may have been removed.</div></div></div>;
+
+      const isCreator = currentUser && walk.creatorId === currentUser.id;
+      const isJoined = currentUser && (walk.joinedUsers||[]).some(u => u.id===currentUser.id);
+      const isCancelled = walk.status === 'cancelled';
+      const total = (walk.invitedGuests?.length||0) + (walk.joinedUsers?.length||0);
+
+      return (
+        <div className="main">
+          <div className="walk-detail">
+            <div className="walk-detail-hero">
+              <div className="walk-detail-label">🥾 Local Walk</div>
+              <div className="walk-detail-title">{walk.title}</div>
+              <div className="walk-detail-organiser">Organised by {walk.creatorName}</div>
+            </div>
+            <div className="walk-detail-body">
+              {isCancelled && <div className="cancelled-banner">⚠️ This walk has been cancelled.</div>}
+              <div className="walk-detail-meta">
+                <div className="meta-card"><div className="meta-card-icon">📅</div><div className="meta-card-label">Date</div><div className="meta-card-val">{formatDate(walk.date)}</div></div>
+                <div className="meta-card"><div className="meta-card-icon">🕐</div><div className="meta-card-label">Start Time</div><div className="meta-card-val">{formatTime(walk.time)}</div></div>
+                <div className="meta-card"><div className="meta-card-icon">📍</div><div className="meta-card-label">Meeting Point</div><div className="meta-card-val">{walk.location}</div></div>
+                <div className="meta-card"><div className="meta-card-icon">👥</div><div className="meta-card-label">Going</div><div className="meta-card-val">{total} {total===1?'person':'people'}</div></div>
+              </div>
+              {walk.description && <div className="walk-detail-desc">{walk.description}</div>}
+              {total > 0 && <div className="walkers-section"><div className="walkers-title">Who's coming</div><div className="walkers-chips">{(walk.invitedGuests||[]).map(g=><span key={g} className="walker-chip">🙋 {g}</span>)}{(walk.joinedUsers||[]).map(u=><span key={u.id} className="walker-chip">✅ {u.name}</span>)}</div></div>}
+              {!isCancelled && showShare && <ShareBox walk={walk} />}
+              <div className="detail-actions">
+                {!isCancelled && <button className="btn-share" onClick={() => setShowShare(s=>!s)}>🔗 {showShare?'Hide share':'Share walk'}</button>}
+                {currentUser && isCreator && !isCancelled && <><button className="btn-secondary" onClick={() => onEdit(walk)}>Edit</button><button className="btn-danger" onClick={() => onCancel(walk.id)}>Cancel Walk</button></>}
+                {currentUser && !isCreator && !isCancelled && (isJoined ? <button className="btn-secondary" onClick={() => onLeave(walk.id)}>Leave Walk</button> : <button className="btn-primary" style={{width:'auto',padding:'10px 28px'}} onClick={() => onJoin(walk.id)}>✓ Join This Walk</button>)}
+              </div>
+              {!currentUser && !isCancelled && <div className="join-prompt"><div className="join-prompt-title">Want to join this walk?</div><div className="join-prompt-sub">Create a free account or sign in to confirm your spot.</div><AuthPanel onLogin={onLogin} context="join" /></div>}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ── Walk Card ──────────────────────────────────────────────────────────────
+    function WalkCard({ walk, currentUser, onEdit, onCancel, onJoin, onLeave, onViewDetail }) {
+      const [showShare, setShowShare] = useState(false);
+      const isCreator = walk.creatorId === currentUser.id;
+      const isJoined = (walk.joinedUsers||[]).some(u => u.id===currentUser.id);
+      const isCancelled = walk.status === 'cancelled';
+      const total = (walk.invitedGuests?.length||0) + (walk.joinedUsers?.length||0);
+      return (
+        <div className={`walk-card ${isCancelled?'cancelled':''}`}>
+          <div className={`walk-card-accent ${isCancelled?'cancelled':isCreator?'mine':''}`} />
+          <div className="walk-card-body">
+            <div className="walk-card-top">
+              <div className="walk-name" onClick={() => onViewDetail(walk.id)}>{walk.title}</div>
+              <div style={{display:'flex',gap:5,flexShrink:0}}>
+                {isCancelled && <span className="walk-badge badge-cancelled">Cancelled</span>}
+                {!isCancelled && isCreator && <span className="walk-badge badge-yours">Your Walk</span>}
+                {!isCancelled && !isCreator && isJoined && <span className="walk-badge badge-joined">Joined</span>}
+              </div>
+            </div>
+            <div className="walk-meta">
+              <div className="meta-item">📅 {formatDate(walk.date)}</div>
+              <div className="meta-item">🕐 {formatTime(walk.time)}</div>
+              <div className="meta-item">📍 {walk.location}</div>
+              {total > 0 && <div className="meta-item">👥 {total} going</div>}
+            </div>
+            {walk.description && <div className="walk-desc">{walk.description}</div>}
+            {total > 0 && <div className="walk-guests"><div className="guests-label">Who's coming</div><div className="guests-list">{(walk.invitedGuests||[]).map(g=><span key={g} className="guest-chip">🙋 {g}</span>)}{(walk.joinedUsers||[]).map(u=><span key={u.id} className="guest-chip">✅ {u.name}</span>)}</div></div>}
+            {showShare && <ShareBox walk={walk} />}
+            <div className="walk-actions">
+              {!isCancelled && <button className="btn-share" onClick={() => setShowShare(s=>!s)}>🔗 Share</button>}
+              <button className="btn-secondary" onClick={() => onViewDetail(walk.id)}>View</button>
+              {isCreator && !isCancelled && <><button className="btn-secondary" onClick={() => onEdit(walk)}>Edit</button><button className="btn-danger" onClick={() => onCancel(walk.id)}>Cancel</button></>}
+              {!isCreator && !isCancelled && (isJoined ? <button className="btn-secondary" onClick={() => onLeave(walk.id)}>Leave</button> : <button className="btn-primary" style={{width:'auto',padding:'9px 18px',fontSize:13}} onClick={() => onJoin(walk.id)}>Join Walk</button>)}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ── Main App ───────────────────────────────────────────────────────────────
+    function App() {
+      const [walks, setWalks] = useState([]);
+      const [currentUser, setCurrentUser] = useState(null);
+      const [showModal, setShowModal] = useState(false);
+      const [editingWalk, setEditingWalk] = useState(null);
+      const [filter, setFilter] = useState('all');
+      const [detailWalkId, setDetailWalkId] = useState(null);
+      const [dbStatus, setDbStatus] = useState('connecting');
+      const unsubRef = useRef(null);
+
+      useEffect(() => {
+        const readHash = () => setDetailWalkId(getWalkIdFromHash());
+        readHash();
+        window.addEventListener('hashchange', readHash);
+        return () => window.removeEventListener('hashchange', readHash);
+      }, []);
+
+      useEffect(() => {
+        const start = () => {
+          try {
+            unsubRef.current = getDB().listenWalks(liveWalks => { setWalks(liveWalks); setDbStatus('connected'); });
+          } catch(e) { setDbStatus('error'); }
+        };
+        if (window._db) { start(); } else { window.addEventListener('firebase-ready', start, { once: true }); }
+        return () => { if (unsubRef.current) unsubRef.current(); };
+      }, []);
+
+      const goHome = () => { window.location.hash = ''; setDetailWalkId(null); };
+      const goDetail = id => { window.location.hash = `walk/${id}`; setDetailWalkId(id); };
+
+      const handleSaveWalk = async (walk) => { await getDB().saveWalk(walk); setShowModal(false); setEditingWalk(null); };
+      const handleCancel = async (id) => { if (!window.confirm('Cancel this walk?')) return; await getDB().updateWalk(id, { status: 'cancelled' }); };
+      const handleJoin = async (id) => {
+        if (!currentUser) return;
+        const walk = walks.find(w => w.id===id);
+        if (!walk || (walk.joinedUsers||[]).some(u => u.id===currentUser.id)) return;
+        await getDB().updateWalk(id, { joinedUsers: [...(walk.joinedUsers||[]), { id: currentUser.id, name: currentUser.name }] });
+      };
+      const handleLeave = async (id) => {
+        const walk = walks.find(w => w.id===id);
+        if (!walk) return;
+        await getDB().updateWalk(id, { joinedUsers: (walk.joinedUsers||[]).filter(u => u.id!==currentUser.id) });
+      };
+
+      const isDetailPage = !!detailWalkId;
+      const filteredWalks = walks
+        .filter(w => { if (!currentUser) return true; if (filter==='mine') return w.creatorId===currentUser.id; if (filter==='joined') return (w.joinedUsers||[]).some(u=>u.id===currentUser.id); if (filter==='upcoming') return w.status==='active' && new Date(`${w.date}T${w.time}`)>=new Date(); return true; })
+        .sort((a,b) => new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`));
+
+      return (
+        <>
+          <header className="header">
+            <div className="header-brand" onClick={goHome}>
+              <span className="header-icon">🥾</span>
+              <span className="header-title">Local Walks</span>
+            </div>
+            <div className="header-right">
+              {isDetailPage && <button className="btn-back" onClick={goHome}>← All Walks</button>}
+              {currentUser && <span className="user-badge">👋 {currentUser.name}</span>}
+              {currentUser && <button className="btn-logout" onClick={() => setCurrentUser(null)}>Sign out</button>}
+            </div>
+          </header>
+
+          {isDetailPage ? (
+            <WalkDetailPage walkId={detailWalkId} currentUser={currentUser} onLogin={setCurrentUser}
+              onEdit={w => { setEditingWalk(w); setShowModal(true); }} onCancel={handleCancel}
+              onJoin={handleJoin} onLeave={handleLeave} allWalks={walks} />
+          ) : !currentUser ? (
+            <main className="main">
+              <div className="hero">
+                <div className="hero-title">Explore Together</div>
+                <div className="hero-sub">Organise local walks, invite friends and discover new routes</div>
+              </div>
+              {dbStatus === 'connecting' && <div className="status-bar connecting" style={{maxWidth:420,margin:'0 auto 20px'}}><div className="status-dot connecting" /> Connecting to database...</div>}
+              {dbStatus === 'error' && <div className="status-bar error" style={{maxWidth:420,margin:'0 auto 20px'}}><div className="status-dot error" /> Could not reach database.</div>}
+              {dbStatus === 'connected' && <AuthPanel onLogin={setCurrentUser} context="home" />}
+            </main>
+          ) : (
+            <main className="main">
+              <div className="section-header">
+                <div className="section-title">Upcoming Walks</div>
+                <button className="btn-new-walk" onClick={() => { setEditingWalk(null); setShowModal(true); }}>+ Plan a Walk</button>
+              </div>
+              <div className={`status-bar ${dbStatus}`}><div className={`status-dot ${dbStatus}`} />{dbStatus==='connected'?'● Live — changes sync instantly':dbStatus==='connecting'?'Connecting...':'Connection error'}</div>
+              <div className="filter-bar">
+                {[['all','All Walks'],['upcoming','Upcoming'],['mine','My Walks'],['joined','Joined']].map(([val,label]) => (
+                  <button key={val} className={`filter-btn ${filter===val?'active':''}`} onClick={() => setFilter(val)}>{label}</button>
+                ))}
+              </div>
+              {filteredWalks.length === 0 ? (
+                <div className="empty-state"><div className="empty-icon">🌳</div><div className="empty-title">No walks here yet</div><div className="empty-sub">Plan your first walk and share it with friends!</div></div>
+              ) : (
+                <div className="walks-grid">
+                  {filteredWalks.map(walk => (
+                    <WalkCard key={walk.id} walk={walk} currentUser={currentUser}
+                      onEdit={w => { setEditingWalk(w); setShowModal(true); }}
+                      onCancel={handleCancel} onJoin={handleJoin} onLeave={handleLeave} onViewDetail={goDetail} />
+                  ))}
+                </div>
+              )}
+            </main>
+          )}
+
+          {showModal && currentUser && (
+            <WalkModal walk={editingWalk} currentUser={currentUser} mode={editingWalk?'edit':'create'}
+              onClose={() => { setShowModal(false); setEditingWalk(null); }} onSave={handleSaveWalk} />
+          )}
+        </>
+      );
+    }
+
+    // Wait for Firebase before rendering
+    function Root() {
+      const [ready, setReady] = useState(!!window._db);
+      useEffect(() => {
+        if (!window._db) {
+          window.addEventListener('firebase-ready', () => setReady(true), { once: true });
+        }
+      }, []);
+      if (!ready) return <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',fontFamily:'DM Sans,sans-serif',color:'#3B5C4A',fontSize:16}}>🌿 Loading...</div>;
+      return <App />;
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<Root />);
+  </script>
+</body>
+</html>
