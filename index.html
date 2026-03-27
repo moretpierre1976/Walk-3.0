@@ -69,6 +69,7 @@
     });
 
     window._hikerIcon = _logoDataUri;
+    window._logoSrc = _logoDataUri;
 
     // Service worker
     if ('serviceWorker' in navigator) {
@@ -607,17 +608,29 @@
               </div>
             </div>
             <div className="member-detail-grid">
-              {member.age&&<div className="member-detail-item"><div className="member-detail-label">Age</div><div className="member-detail-value">{member.age}</div></div>}
-              {member.occupation&&<div className="member-detail-item"><div className="member-detail-label">Occupation</div><div className="member-detail-value">{member.occupation}</div></div>}
-            </div>
-            {member.hobbies&&member.hobbies.length>0&&(
-              <div style={{marginBottom:16}}>
-                <div className="profile-field-label" style={{marginBottom:8}}>Hobbies</div>
-                <div className="profile-hobbies">{member.hobbies.map(h=><span key={h} className="hobby-chip">{h}</span>)}</div>
+              <div className="member-detail-item">
+                <div className="member-detail-label">Age</div>
+                <div className="member-detail-value" style={{color:member.age?'#2C2C2C':'#B8CEBF',fontStyle:member.age?'normal':'italic'}}>{member.age||'Not set'}</div>
               </div>
-            )}
-            {member.notes&&<div style={{marginBottom:20}}><div className="profile-field-label" style={{marginBottom:6}}>Notes</div><div className="profile-notes-text">{member.notes}</div></div>}
-            {!member.age&&!member.occupation&&!member.notes&&<div style={{color:'#B8CEBF',fontSize:14,textAlign:'center',padding:'8px 0 16px',fontStyle:'italic'}}>This member hasn't filled in their profile yet.</div>}
+              <div className="member-detail-item">
+                <div className="member-detail-label">Occupation</div>
+                <div className="member-detail-value" style={{color:member.occupation?'#2C2C2C':'#B8CEBF',fontStyle:member.occupation?'normal':'italic'}}>{member.occupation||'Not set'}</div>
+              </div>
+            </div>
+            <div style={{marginBottom:16}}>
+              <div className="profile-field-label" style={{marginBottom:8}}>Hobbies</div>
+              {member.hobbies&&member.hobbies.length>0
+                ? <div className="profile-hobbies">{member.hobbies.map(h=><span key={h} className="hobby-chip">{h}</span>)}</div>
+                : <div style={{color:'#B8CEBF',fontSize:13,fontStyle:'italic'}}>No hobbies listed</div>
+              }
+            </div>
+            <div style={{marginBottom:20}}>
+              <div className="profile-field-label" style={{marginBottom:6}}>Notes</div>
+              {member.notes
+                ? <div className="profile-notes-text">{member.notes}</div>
+                : <div style={{color:'#B8CEBF',fontSize:13,fontStyle:'italic'}}>No notes added</div>
+              }
+            </div>
             <div className="modal-footer"><button className="btn-secondary" onClick={onClose}>Close</button></div>
           </div>
         </div>
@@ -665,9 +678,9 @@
                     </div>
                     <div className="member-card-body">
                       {u.age&&<span className="member-age-badge">Age {u.age}</span>}
-                      {u.hobbies&&u.hobbies.length>0&&<div className="member-hobbies">{u.hobbies.slice(0,4).map(h=><span key={h} className="hobby-chip" style={{fontSize:11}}>{h}</span>)}{u.hobbies.length>4&&<span className="hobby-chip" style={{fontSize:11}}>+{u.hobbies.length-4}</span>}</div>}
+                      {u.hobbies&&u.hobbies.length>0&&<div className="member-hobbies">{u.hobbies.map(h=><span key={h} className="hobby-chip" style={{fontSize:11}}>{h}</span>)}</div>}
                       {u.notes&&<div className="member-notes">"{u.notes}"</div>}
-                      {!u.age&&!u.hobbies?.length&&!u.notes&&<div style={{color:'#B8CEBF',fontSize:12,fontStyle:'italic'}}>Profile not yet filled in</div>}
+                      {!u.age&&!u.occupation&&!u.hobbies?.length&&!u.notes&&<div style={{color:'#B8CEBF',fontSize:12,fontStyle:'italic'}}>Profile not yet filled in</div>}
                     </div>
                   </div>
                 );
